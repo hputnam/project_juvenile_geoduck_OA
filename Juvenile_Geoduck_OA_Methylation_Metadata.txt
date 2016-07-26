@@ -1,0 +1,97 @@
+#Effects of Ocean Acidification on Phenotype and DNA Methylation in Juvenile Geoduck
+#Data published in:
+#Title:
+#Contact: Hollie Putnam hollieputnam@gmail.com ; Steven Roberts sr320@u.washington.edu
+#Supported by: NOAA OA Program "Assessing the Capacity for Evolutionary Adaptation to Ocean Acidification in Geoduck" to FW Goetz, S Roberts, and P McElhany
+#last modified 20160724 H Putnam
+#See Readme file for project details 
+#See Metadata for details on data files and equipment descriptions 
+
+#########################################################
+Discrete Temperature Probe
+VWR Traceable Digital Thermometer (cat: 61220-601)
+Accuracy: ±0.05°C
+Resolution: 0.001°
+Temperature Range: –50 to 150°C (–58 to 302°F)
+
+Discrete pH Probe
+Probe: Mettler DG115SC glass probe (cat: 89806)
+pH Range: 0-14
+Temperature Range: 0.to 70°C
+Meter: Fisher Scientific accumet pH meter IS 
+Resolution: 0.1mV
+
+Discrete Salinity Probe
+VWR Benchtop/Portable Conductivity Meter (cat: 23226-505)
+Accuracy: 0.3%
+Conductivity Range: 0.01–20 µS, 0.1–200 µS, 1–2000 µS, 10–20,000 µS, 100–200,000 µS, 0.001–2 megohms, 0.01–20 megohms, 0.1–20 ppm dissolved solids, 1–200 ppm dissolved solids, 10–2000 ppm dissolved solids, 100–20,000 ppm dissolved solids
+Temperature Range: –30.0 to 130.0°C (–22 to 266°F)
+
+Continuous Temperature Logging
+Avtech Digital Outdoor Temperature Sensor
+TMP-DOT-SEN-AVTECH
+Operating range: -40°C to 85°C 
+Logging Accuracy and Frequency: ±0.125°C every 2 seconds
+
+#########################################################
+Foldername=pH_Calibration_Files
+
+Description: 
+Filenames:20160314.csv, 20160317.csv, 20160319.csv, 20160320.csv, 20160321_1.csv, 20160321_2.csv, 20160326.csv, 20160401.csv, 
+mVTris = measured with above probe in milliVolts
+TTris = temperature of the Tris standard measured with above probe °C
+
+#########################################################
+Filename=SW_Chem_Juvenile_Geoduck.csv
+
+Description: 
+Measure.Date = Date the water sample was collected yyyymmdd
+Calib.Date = Date the pH probe was calibrated against the Tris standard yyyymmdd 
+Tank = Tank number
+Treatment = 
+Temperature = measured with above probe °C
+pH.MV = pH measured with above probe on total scale. Calibrated to Tris standard batch date X
+Salinity = salinity as calculated internally from conductivity measured with VWR Benchtop/Portable Conductivity Meter (cat: 23226-505)
+TA = total alkalinity calculated from gran titration Dickson et al SOP  (WA State)
+
+CRM.TA = The calculated total alkalinity of the Certified Reference Material (CRM Dickson lab)
+CRM = The reported value for the Certified Reference Material (CRM Dickson lab)
+Corrected.TA = The correction of the calculated value against the reported value
+
+
+#########################################################
+Filename=Cell_Counts_Juvenile_Geoduck.csv
+
+Description: Hemocytometer cell counts of algal feed
+
+Date = 
+Tank = 
+Treatment = 
+Count1 = Number of algal feed cells counted for replicate 1
+Count2 = Number of algal feed cells counted for replicate 2
+Volume.Counted = The volume of seawater counted (ml)
+
+
+#########################################################
+Filename=Size_Juvenile_Geoduck.csv
+
+Description: 
+Date =  
+Tank = Experimental Tank number
+Day = Experimental day of measurement
+N = Number of samples measured
+Treatment = 
+Length = Longest length of shell (mm) ~ parallel to the hinge
+Width = Width of shell from hinge umbo to opposite side ~ perpedicular to the hinge
+Area = the planar surface area of one side of the shell traced using imageJ with internal scale bar (mm^2)
+Notes = Description of any issues with each sample or photograph
+
+#########################################################
+Filename= Flow_Juvenile_Geoduck.csv
+
+Description: 
+Date =  dd-mmm-yy
+Tank = Experimental Tank number
+Rate1 = flow rate in ml per 10 seconds, first measure
+Rate2 = flow rate in ml per 10 seconds, second measure
+#########################################################
