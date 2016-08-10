@@ -83,7 +83,8 @@ N = Number of samples measured
 Treatment = 
 Length = Longest length of shell (mm) ~ parallel to the hinge
 Width = Width of shell from hinge umbo to opposite side ~ perpedicular to the hinge
-Area = the planar surface area of one side of the shell traced using imageJ with internal scale bar (mm^2)
+Area = the planar surface area of one side of the shell traced using imageJ with internal scale bar (mm^2), 95 pixels /mm geoduck juvenile 20167029 and 20160808 - set on lowest magnification with stage micrometer scale in each picture
+
 Notes = Description of any issues with each sample or photograph
 
 #########################################################

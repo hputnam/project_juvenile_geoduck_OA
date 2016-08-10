@@ -1,0 +1,21 @@
+Call:
+   aov(formula = log10(Area) ~ Treatment * Day, data = Initial)
+
+Terms:
+                Treatment       Day Treatment:Day Residuals
+Sum of Squares   0.256210 15.726756      0.067174  5.475940
+Deg. of Freedom         2         1             2       282
+
+Residual standard error: 0.1393493
+Estimated effects may be unbalanced
+9 observations deleted due to missingness
+Call:
+   aov(formula = log10(Area) ~ Treatment * Secondary, data = ReExp)
+
+Terms:
+                Treatment Secondary Treatment:Secondary Residuals
+Sum of Squares  0.0201014 0.0104715           0.0566791 0.4617524
+Deg. of Freedom         2         1                   2        54
+
+Residual standard error: 0.09247146
+Estimated effects may be unbalanced
