@@ -18,31 +18,202 @@ library(plyr)
 library(gridExtra)
 
 #Required Data files
+#Avtech_data_Juvenile_Geoduck_Exp1.csv
+#Avtech_Data_Juvenile_Geoduck_ICG.csv
+#Hobo_Temperature_Juvenile_Geoduck_OCG.csv
+#Avtech_data_Juvenile_Geoduck_Exp2.csv
 #pH_Calibration_Files/
 #SW_Chem_Juvenile_Geoduck.csv
-#Cell_Counts_Juvenile_Geoduck.csv
+#Cell_Counts_Juvenile_Geoduck_Exp1.csv
+#Cell_Counts_Juvenile_Geoduck_Exp2.csv
 #Size_Juvenile_Geoduck.csv
-#Avetch_Temperature_Juvenile_Geoduck.csv
 
 #############################################################
 setwd("/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalysis/Data/") #set working directory
 mainDir<-'/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalysis/' #set main directory
 
 ##### CONTINUOUS HEADER TANK PH EXPOSURE 1 #####
+#Avtech_data_Juvenile_Geoduck_Exp1.csv
+Exp1.pH <- read.csv("Avtech_data_Juvenile_Geoduck_Exp1.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+Exp1.pH$Date.Time <-as.POSIXct(Exp1.pH$Date.Time, format="%m/%d/%y %H:%M")
+Exp1.pH$Date <- as.Date(Exp1.pH$Date.Time) #already got this one from the answers above
+Exp1.pH$Time <- format(as.POSIXct(Exp1.pH$Date.Time) ,format = "%H:%M:%S") 
 
-##### CONTINUOUS HEADER TANK PH INDOOR COMMON GARDEN #####
+pH.low.m <- aggregate(Header2.pH ~ Date, data = Exp1.pH, mean)
+pH.low.se <- aggregate(Header2.pH ~ Date, data = Exp1.pH, std.error)
+pH.med.m <- aggregate(Header1.pH ~ Date, data = Exp1.pH, mean)
+pH.med.se <- aggregate(Header1.pH ~ Date, data = Exp1.pH, std.error)
+pH.low <- cbind(pH.low.m, pH.low.se$Header2.pH)
+pH.low$Treatment <- "Super.Low"
+colnames(pH.low) <- c("Date", "mean", "se", "Treatment")
+pH.med <- cbind(pH.med.m, pH.med.se$Header1.pH)
+pH.med$Treatment <- "Low"
+colnames(pH.med) <- c("Date", "mean", "se", "Treatment")
+daily.pH <- rbind(pH.low, pH.med)
+daily.pH
 
-##### CONTINUOUS HEADER TANK PH EXPOSURE 2 #####
+Fig.E1.daily.pH <- ggplot(daily.pH, aes(x=Date, y=mean, group=Treatment)) + 
+  geom_errorbar(aes(ymin=daily.pH$mean-daily.pH$se, ymax=daily.pH$mean+daily.pH$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
+  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
+  xlab("Time") +
+  ylab("pH Total Scale") +
+  ylim(6.8,8.0) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank()) #Set the plot background
+Fig.E1.daily.pH
 
-##### CONTINUOUS TANK TEMPERATURE EXPOSURE 1 #####
+##### CONTINUOUS TANK TEMPERATURE AND PH OF INDOOR COMMON GARDEN #####
+#Avtech_Data_Juvenile_Geoduck_ICG.csv
+ICG <- read.csv("Avtech_Data_Juvenile_Geoduck_ICG.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+ICG$Date.Time <-as.POSIXct(ICG$Date.Time, format="%m/%d/%y %H:%M")
+ICG$Date <- as.Date(ICG$Date.Time) 
+ICG$Time <- format(as.POSIXct(ICG$Date.Time) ,format = "%H:%M:%S") 
 
-##### CONTINUOUS TANK TEMPERATURE INDOOR COMMON GARDEN #####
+ICG.Temps.m <- aggregate(Temp.C ~ Date, data=ICG, mean)
+ICG.Temps.se <- aggregate(Temp.C ~ Date, data=ICG, std.error)
+ICG.Temps <- cbind(ICG.Temps.m, ICG.Temps.se$Temp.C)
+colnames(ICG.Temps) <- c("Date", "mean", "se")
+
+Fig.ICG.Temp <- ggplot(ICG.Temps, aes(x=Date, y=mean)) + 
+  geom_errorbar(aes(ymin=ICG.Temps$mean-ICG.Temps$se, ymax=ICG.Temps$mean+ICG.Temps$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+  geom_line(aes(x=Date, y=mean), size = 0.5, position = position_dodge(width = 0.05)) +   
+  geom_point(aes(x=Date, y=mean), size = 2, position = position_dodge(width = 0.05)) +
+  xlab("Time") +
+  ylab("Temperature °C") +
+  ylim(0,20) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank()) #Set the plot background
+Fig.ICG.Temp
+
+ICG.pH.m <- aggregate(pH.Total ~ Date, data=ICG, mean)
+ICG.pH.se <- aggregate(pH.Total ~ Date, data=ICG, std.error)
+ICG.pH <- cbind(ICG.pH.m, ICG.pH.se$pH.Total)
+colnames(ICG.pH) <- c("Date", "mean", "se")
+
+Fig.ICG.pH <- ggplot(ICG.pH, aes(x=Date, y=mean)) + 
+  geom_errorbar(aes(ymin=ICG.pH$mean-ICG.pH$se, ymax=ICG.pH$mean+ICG.pH$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+  geom_line(aes(x=Date, y=mean), size = 0.5, position = position_dodge(width = 0.05)) +   
+  geom_point(aes(x=Date, y=mean), size = 2, position = position_dodge(width = 0.05)) +
+  xlab("Time") +
+  ylab("pH Total Scale") +
+  ylim(6.8, 8.0) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank()) #Set the plot background
+Fig.ICG.pH
 
 ##### CONTINUOUS TANK TEMPERATURE OUTDOOR COMMON GARDEN #####
+#Hobo_Temperature_Juvenile_Geoduck_OCG.csv
+OCG.Temp <- read.csv("Hobo_Temperature_Juvenile_Geoduck_OCG.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+OCG.Temp$Date.Time <-as.POSIXct(OCG.Temp$Date.Time, format="%m/%d/%y %H:%M")
+OCG.Temp$Date <- as.Date(OCG.Temp$Date.Time) 
+OCG.Temp$Time <- format(as.POSIXct(OCG.Temp$Date.Time) ,format = "%H:%M:%S") 
 
-##### CONTINUOUS WATERBATH TEMPERATURE EXPOSURE 2 #####
+OCG.Temps.m <- aggregate(Temp.C ~ Date*Treatment, data=OCG.Temp, mean)
+OCG.Temps.se <- aggregate(Temp.C ~  Date*Treatment, data=OCG.Temp, std.error)
+OCG.Temps <- cbind(OCG.Temps.m, OCG.Temps.se$Temp.C)
+colnames(OCG.Temps) <- c("Date", "Treatment", "mean", "se")
 
-##### SEAWATER CHEMISTRY ANALYSIS FOR DISCRETE MEASUREMENT#####
+Fig.OCG.Temp <- ggplot(OCG.Temps, aes(x=Date, y=mean), group=Treatment) + 
+  geom_errorbar(aes(ymin=OCG.Temps$mean-OCG.Temps$se, ymax=OCG.Temps$mean+OCG.Temps$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
+  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
+  xlab("Time") +
+  ylab("Temperature °C") +
+  ylim(0, 20) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank(), #Set the plot background
+        legend.position = "none") #Removes the legend 
+Fig.OCG.Temp
+
+##### CONTINUOUS HEADER TANK PH EXPOSURE 2 #####
+#Avtech_data_Juvenile_Geoduck_Exp2.csv
+#Exposure 2 Waterbath pH
+Exp2.data <- read.csv("Avtech_data_Juvenile_Geoduck_Exp2.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+Exp2.data$Date.Time <-as.POSIXct(Exp2.pH$Date.Time, format="%m/%d/%y %H:%M")
+Exp2.data$Date <- as.Date(Exp2.data $Date.Time) #already got this one from the answers above
+Exp2.data$Time <- format(as.POSIXct(Exp2.data $Date.Time) ,format = "%H:%M:%S") 
+
+E2.pH.low.m <- aggregate(pH.Low ~ Date, data = Exp2.data, mean)
+E2.pH.low.se <- aggregate(pH.Low ~ Date, data = Exp2.data, std.error)
+E2.pH.amb.m <- aggregate(pH.Ambient ~ Date, data = Exp2.data, mean)
+E2.pH.amb.se <- aggregate(pH.Ambient ~ Date, data = Exp2.data, std.error)
+E2.pH.low <- cbind(E2.pH.low.m, E2.pH.low.se$pH.Low)
+E2.pH.low$Treatment <- "Low"
+colnames(E2.pH.low) <- c("Date", "mean", "se", "Treatment")
+E2.pH.amb <- cbind(E2.pH.amb.m, E2.pH.amb.se$pH.Ambient)
+E2.pH.amb$Treatment <- "Ambient"
+colnames(E2.pH.amb) <- c("Date", "mean", "se", "Treatment")
+E2.daily.pH <- rbind(E2.pH.low, E2.pH.amb)
+E2.daily.pH
+
+Fig.E2.daily.pH <- ggplot(E2.daily.pH, aes(x=Date, y=mean, group=Treatment)) + 
+  geom_errorbar(aes(ymin=E2.daily.pH$mean-E2.daily.pH$se, ymax=E2.daily.pH$mean+E2.daily.pH$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
+  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
+  xlab("Time") +
+  ylab("pH Total Scale") +
+  ylim(6.8,8.0) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank()) #Set the plot background
+Fig.E2.daily.pH
+
+#Exposure 2 Waterbath Temperatures
+E2.Temp.low.m <- aggregate(Temp.Low ~ Date, data = Exp2.data, mean)
+E2.Temp.low.se <- aggregate(Temp.Low ~ Date, data = Exp2.data, std.error)
+E2.Temp.amb.m <- aggregate(Temp.Ambient ~ Date, data = Exp2.data, mean)
+E2.Temp.amb.se <- aggregate(Temp.Ambient ~ Date, data = Exp2.data, std.error)
+E2.Temp.low <- cbind(E2.Temp.low.m, E2.Temp.low.se$Temp.Low)
+E2.Temp.low$Treatment <- "Low"
+colnames(E2.Temp.low) <- c("Date", "mean", "se", "Treatment")
+E2.Temp.amb <- cbind(E2.Temp.amb.m, E2.Temp.amb.se$Temp.Ambient)
+E2.Temp.amb$Treatment <- "Ambient"
+colnames(E2.Temp.amb) <- c("Date", "mean", "se", "Treatment")
+E2.daily.Temp <- rbind(E2.Temp.low, E2.Temp.amb)
+E2.daily.Temp
+
+Fig.E2.daily.Temp <- ggplot(E2.daily.Temp, aes(x=Date, y=mean, group=Treatment)) + 
+  geom_errorbar(aes(ymin=E2.daily.Temp$mean-E2.daily.Temp$se, ymax=E2.daily.Temp$mean+E2.daily.Temp$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
+  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
+  xlab("Time") +
+  ylab("Temp Total Scale") +
+  ylim(0,20) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank()) #Set the plot background
+Fig.E2.daily.Temp
+
+##### SEAWATER CHEMISTRY ANALYSIS FOR DISCRETE MEASUREMENTS #####
 
 ##### pH Tris Calibration Curves
 #Data to calculate conversion equations from mV to total scale using tris standard for pH probe
@@ -82,7 +253,7 @@ phTris<- (11911.08-18.2499*STris-0.039336*STris^2)*(1/(SW.chem$Temperature+273.1
 SW.chem$pH.Total<-phTris+(mvTris/1000-SW.chem$pH.MV/1000)/(R*(SW.chem$Temperature+273.15)*log(10)/F) #calculate the pH on the total scale (Dickson A. G., Sabine C. L. and Christian J. R., SOP 6a)
 SW.chem <- na.omit(SW.chem)
 
-##### SEACARB CALCULATIONS Seacarb Calculations #####
+##### SEACARB CALCULATIONS #####
 
 #Calculate CO2 parameters using seacarb
 carb.output <- carb(flag=8, var1=SW.chem$pH.Total, var2=SW.chem$TA/1000000, S= SW.chem$Salinity, T=SW.chem$Temperature, P=0, Pt=0, Sit=0, pHscale="T", kf="pf", k1k2="l", ks="d") #calculate seawater chemistry parameters using seacarb
@@ -98,15 +269,81 @@ colnames(carb.output) <- c("Date", "Exposure", "Tank",  "Treatment",	"flag",	"Sa
 carb.output <- subset(carb.output, select= c("Exposure","Date",  "Tank",  "Treatment",	"Salinity",	"Temperature",		"pH",	"CO2",	"pCO2",	"HCO3",	"CO3",	"DIC", "TA",	"Aragonite.Sat"))
 
 ##### SEAWATER CHEMISTRY DESCRIPTIVE STATISTICS EXPOSURE 1 AND 2 #####
-#Calcualte descriptive stats by Tank
+
 ccarb <- melt(carb.output[,c(1,3,4,5:14)], id.vars=c("Exposure", "Treatment", "Tank")) #reshape data into long format
+
+#Calculate descriptive stats by Tank
+Exp1 <-subset(ccarb, Exposure == "Exposure1") #separate out exposure 1 for all data
+Exp2 <-subset(ccarb, Exposure == "Exposure2") #separate out exposure 2 for all data
 
 SWC.Tanks <- ddply(ccarb, c("Exposure", "Tank", "variable"), summarise,
       N = length(na.omit(value)), #count the sample size removing NA
       mean = mean(value), #calculate average 
       sem = sd(value)/sqrt(N)) #calcualte the standard error of the mean
 
-#Calcualte descriptive stats by Treatment
+#Test for tank and treatment differneces in Temperature and Total Alkalinity in Exposure 1
+Exp1.Temp <-subset(Exp1, variable=="Temperature") #separate out exposure 1 for all data
+temp1.tank <- aov(value ~Tank, data=Exp1.Temp)
+anova(temp1.tank)
+par(mfrow=c(3,3))
+hist(temp1.tank$residuals)
+boxplot(temp1.tank$residuals)
+plot(temp1.tank)
+
+temp1.trt <- aov(value ~Treatment, data=Exp1.Temp)
+anova(temp1.trt)
+par(mfrow=c(3,3))
+hist(temp1.trt$residuals)
+boxplot(temp1.trt$residuals)
+plot(temp1.trt)
+
+Exp1.TA <-subset(Exp1, variable=="TA") #separate out exposure 1 for all data
+TA1.tank <- aov(value ~Tank, data=Exp1.TA)
+anova(TA1.tank)
+par(mfrow=c(3,3))
+hist(TA1.tank$residuals)
+boxplot(TA1.tank$residuals)
+plot(TA1.tank)
+
+TA1.trt <- aov(value ~Treatment, data=Exp1.TA)
+anova(TA1.trt)
+par(mfrow=c(3,3))
+hist(TA1.trt$residuals)
+boxplot(TA1.trt$residuals)
+plot(TA1.trt)
+
+#Test for tank and treatment differneces in Temperature and Total Alkalinity in Exposure 2
+Exp2.Temp <-subset(Exp2, variable=="Temperature") #separate out exposure 2 for all data
+temp2.tank <- aov(value ~Tank, data=Exp2.Temp)
+anova(temp2.tank)
+par(mfrow=c(3,3))
+hist(temp2.tank$residuals)
+boxplot(temp2.tank$residuals)
+plot(temp2.tank)
+
+temp2.trt <- aov(value ~Treatment, data=Exp2.Temp)
+anova(temp2.trt)
+par(mfrow=c(3,3))
+hist(temp2.trt$residuals)
+boxplot(temp2.trt$residuals)
+plot(temp2.trt)
+
+Exp2.TA <-subset(Exp2, variable=="TA") #separate out exposure 2 for all data
+TA2.tank <- aov(value ~Tank, data=Exp2.TA)
+anova(TA2.tank)
+par(mfrow=c(3,3))
+hist(TA2.tank$residuals)
+boxplot(TA2.tank$residuals)
+plot(TA2.tank)
+
+TA2.trt <- aov(value ~Treatment, data=Exp2.TA)
+anova(TA2.trt)
+par(mfrow=c(3,3))
+hist(TA2.trt$residuals)
+boxplot(TA2.trt$residuals)
+plot(TA2.trt)
+
+#Calculate descriptive stats by Treatment
 SWC.Treatments <- ddply(ccarb, c("Exposure", "Treatment", "variable"), summarise,
       N = length(na.omit(value)), #count the sample size removing NA
       mean = mean(value), #calculate average 
@@ -121,114 +358,138 @@ Exposure2.long <- reshape(Exposure2, idvar="Treatment", direction="wide", timeva
 write.table (Exposure1.long, file="/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_oa/RAnalysis/Output/Seawater_chemistry_table_Output_Seed_exposure1.csv", sep=",", row.names = FALSE) #save data to output file
 write.table (Exposure2.long, file="/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_oa/RAnalysis/Output/Seawater_chemistry_table_Output_Seed_exposure2.csv", sep=",", row.names = FALSE) #save data to output file
 
-#Plotting
-par(mar = rep(2, 4))
-par(mfrow=c(5,4))
-Exposure1.Plot<-function(index) {plot(Exposure1.long[,index] ~ Exposure1.long$Treatment, main=names(Exposure1.long[index]), pch=16,xlab="Treatment",ylab=names(Exposure1.long)[index])}
-lapply(2:21,FUN=Exposure1.Plot)
-div.off()
-
-par(mar = rep(2, 4))
-par(mfrow=c(5,4))
-Exposure2.Plot<-function(index) {plot(Exposure2.long[,index] ~ Exposure2.long$Treatment, main=names(Exposure2.long[index]), pch=16,xlab="Treatment",ylab=names(Exposure2.long)[index])}
-lapply(2:21,FUN=Exposure2.Plot)
-
 ##### ALGAL FEED DENSITY COUNTS EXPOSURE 1 #####
+#Cell_Counts_Juvenile_Geoduck_Exp1.csv
+cells.1 <- read.csv("Cell_Counts_Juvenile_Geoduck_Exp1.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+cells.1$Avg.Cells <- rowMeans(cells.1[,c("Count1",  "Count2")], na.rm = TRUE) #calculate average of counts
+cells.1$cell.num <- cells.1$Avg.Cells/cells.1$Volume.Counted #calculate density
 
-cell.counts <- read.csv("Cell_Counts_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-cell.counts$Avg.Cells <- rowMeans(cell.counts[,c("Count1",  "Count2")], na.rm = TRUE) #calculate average of counts
-cell.counts$cells.ml <- cell.counts$Avg.Cells/cell.counts$Volume.Counted #calculate density
+avg.cells.tank.1 <- aggregate(cell.num ~ Tank, data=cells.1, mean)
+se.cells.tank.1 <- aggregate(cell.num ~ Tank, data=cells.1, std.error)
+avg.cells.trt.1 <- aggregate(cell.num ~ Treatment, data=cells.1, mean)
+se.cells.trt.1 <- aggregate(cell.num ~ Treatment, data=cells.1, std.error)
+Cell.Counts.1 <- cbind(avg.cells.tank.1, se.cells.tank.1$cell.num, avg.cells.trt.1$cell.num, se.cells.trt.1$cell.num)
+colnames(Cell.Counts.1) <- c("Tank", "tank.avg", "tank.se", "trt.avg", "trt.se")
 
-#Tanks
-mean_cells=tapply(cell.counts$cells.ml, cell.counts$Tank, mean, na.rm = TRUE)
-se_cells=tapply(cell.counts$cells.ml, cell.counts$Tank, std.error, na.rm = TRUE)
+Fig.Exp1.cells <- ggplot(Cell.Counts.1, aes(x=Tank, y=tank.avg)) + 
+  geom_errorbar(aes(ymin=Cell.Counts.1$tank.avg-Cell.Counts.1$tank.se, ymax=Cell.Counts.1$tank.avg+Cell.Counts.1$tank.se), colour="black", width=.1, position = position_dodge(width = 0.6)) +
+  #geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
+  geom_point(aes(), size = 3, position = position_dodge(width = 0.6)) +
+  xlab("Tanks") +
+  ylab("cells per ml") +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank()) 
+Fig.Exp1.cells
 
-#Treatments
-gmean_cells <- tapply(cell.counts$cells.ml, cell.counts$Treatment, mean, na.rm = TRUE)
-gse_cells <- tapply(cell.counts$cells.ml, cell.counts$Treatment, std.error, na.rm = TRUE)
+cells1.tank <- aov(cell.num ~Tank, data=cells.1)
+anova(cells1.tank)
+par(mfrow=c(3,2))
+hist(cells1.tank$residuals)
+boxplot(cells1.tank$residuals)
+plot(cells1.tank)
+
+cells1.trt <- aov(cell.num ~Treatment, data=cells.1)
+anova(cells1.trt)
+par(mfrow=c(3,2))
+hist(cells1.trt$residuals)
+boxplot(cells1.trt$residuals)
+plot(cells1.trt)
 
 ##### ALGAL FEED DENSITY COUNTS EXPOSURE 2 #####
+#Cell_Counts_Juvenile_Geoduck_Exp2.csv
+cells.2 <- read.csv("Cell_Counts_Juvenile_Geoduck_Exp2.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+cells.2$cell.num <- rowMeans(cells.2[,c("Count1",  "Count2", "Count3")], na.rm = TRUE) #calculate average of counts
+avg.cells.tank <- aggregate(cell.num ~ Tank, data=cells.2, mean)
+se.cells.tank <- aggregate(cell.num ~ Tank, data=cells.2, std.error)
+avg.cells.trt <- aggregate(cell.num ~ Treatment, data=cells.2, mean)
+se.cells.trt <- aggregate(cell.num ~ Treatment, data=cells.2, std.error)
+Cell.Counts <- cbind(avg.cells.tank, se.cells.tank$cell.num, avg.cells.trt$cell.num, se.cells.trt$cell.num)
+colnames(Cell.Counts) <- c("Tank", "tank.avg", "tank.se", "trt.avg", "trt.se")
 
-##### Plot Tank and Treatment mean ± se #####
-pdf("/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalysis/Output/running_carbonate_chemistry_tanks_Seed.pdf")
-par(cex.axis=0.8, cex.lab=0.8, mar=c(5, 5, 4, 2),mgp=c(3.7, 0.8, 0),las=1, mfrow=c(3,3), oma=c(0,0,2,0))
+Fig.Exp2.cells <- ggplot(Cell.Counts, aes(x=Tank, y=tank.avg)) + 
+  geom_errorbar(aes(ymin=Cell.Counts$tank.avg-Cell.Counts$tank.se, ymax=Cell.Counts$tank.avg+Cell.Counts$tank.se), colour="black", width=.1, position = position_dodge(width = 0.6)) +
+  #geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
+  geom_point(aes(), size = 3, position = position_dodge(width = 0.6)) +
+  xlab("Tanks") +
+  ylab("cells per ml") +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank()) 
+Fig.Exp2.cells
 
-#Tanks
-plot(c(11,16),c(0,6000),type="n",ylab=expression(paste("pCO"["2"])), xlab=expression(paste("Tank")))
-plotCI(x=c(11,12,13,14,15,16), y=mean_pCO2,uiw=se_pCO2, liw=se_pCO2,add=TRUE,gap=0.001)
+cells2.tank <- aov(cell.num ~Tank, data=cells.2)
+anova(cells2.tank)
+par(mfrow=c(3,2))
+hist(cells2.tank$residuals)
+boxplot(cells2.tank$residuals)
+plot(cells2.tank)
 
-plot(c(11,16),c(6.5,8.5),type="n",ylab=expression(paste("pH")), xlab=expression(paste("Tank")))
-plotCI(x=c(11,12,13,14,15,16), y=mean_pH,uiw=se_pH, liw=se_pH,add=TRUE,gap=0.001)
-
-plot(c(11,16),c(12,15),type="n",ylab=expression(paste("Temperature °C")), xlab=expression(paste("Tank")))
-plotCI(x=c(11,12,13,14,15,16), y=mean_Temp,uiw=se_Temp, liw=se_Temp,add=TRUE,gap=0.001)
-
-plot(c(11,16),c(25,29),type="n",ylab=expression(paste("Salinity")), xlab=expression(paste("Tank")))
-plotCI(x=c(11,12,13,14,15,16), y=mean_Sal,uiw=se_Sal, liw=se_Sal,add=TRUE,gap=0.001)
-
-plot(c(11,16),c(1800,2200),type="n",ylab=expression(paste("Total Alkalinity µmol kg"^"-1")), xlab=expression(paste("Tank")))
-plotCI(x=c(11,12,13,14,15,16), y=mean_TA,uiw=se_TA, liw=se_TA,add=TRUE,gap=0.001)
-
-plot(c(11,16),c(1850,2400),type="n",ylab=expression(paste("DIC µmol kg"^"-1")), xlab=expression(paste("Tank")))
-plotCI(x=c(11,12,13,14,15,16), y=mean_DIC,uiw=se_DIC, liw=se_DIC,add=TRUE,gap=0.001)
-
-plot(c(11,16),c(20000,60000),type="n", ylab=expression(paste("Algal Feed (Cells ml"^"-1",")")), xlab=expression(paste("Tank")))
-plotCI(x=c(11,12,13,14,15,16), y=mean_cells,uiw=se_cells, liw=se_cells,add=TRUE,gap=0.001)
-
-title("Tank Conditions Juvenile Experiment", outer=TRUE)
-dev.off()
-
-
-pdf("/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalysis/Output/running_carbonate_chemistry_treatments_Seed.pdf")
-par(cex.axis=0.8, cex.lab=0.8, mar=c(5, 5, 4, 2),mgp=c(3.7, 0.8, 0),las=1, mfrow=c(3,3), oma=c(0,0,2,0))
-
-#Treatments
-plot(c(1,2,3),c(0,6000,6000), xaxt = "n", type="n",ylab=expression(paste("pCO"["2"])), xlab=expression(paste("Treatment")))
-axis(1, at=1:3, labels=c("pH 7.89", "pH 7.38", "pH 7.04"))
-plotCI(x=c(1:3), y=gmean_pCO2,uiw=gse_pCO2, liw=gse_pCO2,add=TRUE,gap=0.001, pch=20, col=c("blue", "pink", "red"))
-
-plot(c(1,2,3),c(6.8,8.5,8.5), xaxt = "n", type="n",ylab=expression(paste("pH")), xlab=expression(paste("Treatment")))
-axis(1, at=1:3, labels=c("pH 7.89", "pH 7.38", "pH 7.04"))
-plotCI(x=c(1:3), y=gmean_pH,uiw=gse_pH, liw=gse_pH,add=TRUE,gap=0.001, pch=20, col=c("blue", "pink", "red"))
-
-plot(c(1,2,3),c(13,15,15), xaxt = "n", type="n",ylab=expression(paste("Temperature °C")), xlab=expression(paste("Treatment")))
-axis(1, at=1:3, labels=c("pH 7.89", "pH 7.38", "pH 7.04"))
-plotCI(x=c(1:3), y=gmean_Temp,uiw=gse_Temp, liw=gse_Temp,add=TRUE,gap=0.001, pch=20, col=c("blue", "pink", "red"))
-
-plot(c(1,2,3),c(25,29,29), xaxt = "n", type="n",ylab=expression(paste("Salinity")), xlab=expression(paste("Treatment")))
-axis(1, at=1:3, labels=c("pH 7.89", "pH 7.38", "pH 7.04"))
-plotCI(x=c(1:3), y=gmean_Sal,uiw=gse_Sal, liw=gse_Sal,add=TRUE,gap=0.001, pch=20, col=c("blue", "pink", "red"))
-
-plot(c(1,2,3),c(1800,2200,2200), xaxt = "n", type="n",ylab=expression(paste("Total Alkalinity µmol kg"^"-1")), xlab=expression(paste("Treatment")))
-axis(1, at=1:3, labels=c("pH 7.89", "pH 7.38", "pH 7.04"))
-plotCI(x=c(1:3), y=gmean_TA,uiw=gse_TA, liw=gse_TA,add=TRUE,gap=0.001, pch=20, col=c("blue", "pink", "red"))
-
-plot(c(1,2,3),c(1800,2400,2400), xaxt = "n", type="n",ylab=expression(paste("DIC µmol kg"^"-1")), xlab=expression(paste("Treatment")))
-axis(1, at=1:3, labels=c("pH 7.89", "pH 7.38", "pH 7.04"))
-plotCI(x=c(1:3), y=gmean_DIC,uiw=gse_DIC, liw=gse_DIC,add=TRUE,gap=0.001, pch=20, col=c("blue", "pink", "red"))
-
-plot(c(1,2,3),c(20000,90000,90000), xaxt = "n", type="n", ylab=expression(paste("Algal Feed (Cells ml"^"-1",")")), xlab=expression(paste("Treatment")))
-axis(1, at=1:3, labels=c("pH 7.89", "pH 7.38", "pH 7.04"))
-plotCI(x=c(1:3), y=gmean_cells,uiw=gse_cells, liw=gse_cells,add=TRUE,gap=0.001, pch=20, col=c("blue", "pink", "red"))
+cells2.trt <- aov(cell.num ~Treatment, data=cells.2)
+anova(cells2.trt)
+par(mfrow=c(3,2))
+hist(cells2.trt$residuals)
+boxplot(cells2.trt$residuals)
+plot(cells2.trt)
 
 ##### JUVENILE GEODUCK SHELL SIZE #####
 
 seed.size <- read.csv("Size_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
 Initial <- subset(seed.size, Timepoint=="Initial", select = Date:Area)
+Initial$Ratio <- Initial$Length/Initial$Width
 Init.avg.area <- aggregate(Area ~ Day*Treatment, data=Initial, mean)
 Init.se.area <- aggregate(Area ~ Day*Treatment, data=Initial, std.error)
-Init.Shell.size <- cbind(Init.avg.area, Init.se.area$Area)
-colnames(Init.Shell.size) <- c("Day", "Treatment", "avg.area", "se.area")
+Init.avg.Len <- aggregate(Length ~ Day*Treatment, data=Initial, mean)
+Init.se.Len <- aggregate(Length ~ Day*Treatment, data=Initial, std.error)
+Init.avg.Wid <- aggregate(Width ~ Day*Treatment, data=Initial, mean)
+Init.se.Wid <- aggregate(Width ~ Day*Treatment, data=Initial, std.error)
+Init.avg.Ratio <- aggregate(Ratio ~ Day*Treatment, data=Initial, mean)
+Init.se.Ratio<- aggregate(Ratio ~ Day*Treatment, data=Initial, std.error)
+Init.Shell.size <- cbind(Init.avg.area, Init.se.area$Area, Init.avg.Len$Length, Init.se.Len$Length, Init.avg.Wid$Width, Init.se.Wid$Width,Init.avg.Ratio$Ratio, Init.se.Ratio$Ratio)
+colnames(Init.Shell.size) <- c("Day", "Treatment", "avg.area", "se.area", "avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio")
+
+norm.area.amb <- subset(Init.avg.area, Day=="135" & Treatment=="Ambient", select = Area)
+norm.area.med <- subset(Init.avg.area, Day=="135" & Treatment=="Medium", select = Area)
+norm.area.high <- subset(Init.avg.area, Day=="135" & Treatment=="High", select = Area)
+
 
 ReExp <- subset(seed.size, Timepoint=="Reexposure", select = Date:Area)
+ReExp$Ratio <- ReExp$Length/ReExp$Width
+
+ifelse(ReExp$Treatment == "Medium", ReExp$A.norm <- norm.area.amb, NA)
+
+norms <- function(x) { 
+  if(x == "Ambient") y <- norm.area.amb
+  if(x == "Medium") y <- norm.area.med
+  if(x == "High") y <- norm.area.high
+  return(y)
+}
+
+ReExp$A.norm <- as.numeric(sapply(ReExp$Treatment,norms))
+ReExp$A.rel <- ReExp$Area/ReExp$A.norm
 ReExp.avg.area <- aggregate(Area ~ Day*Treatment*Secondary, data=ReExp, mean)
 ReExp.se.area <- aggregate(Area ~ Day*Treatment*Secondary, data=ReExp, std.error)
-ReExp.Shell.size <- cbind(ReExp.avg.area, ReExp.se.area$Area)
-colnames(ReExp.Shell.size) <- c("Day", "Treatment", "Secondary", "avg.area", "se.area")
-ReExp.Shell.size$Groups <- c("Amb-Amb", "Med-Amb", "High-Amb", "Amb-Med", "Med-Med", "High-Med")
+ReExp.avg.Len <- aggregate(Length ~ Day*Treatment*Secondary, data=ReExp, mean)
+ReExp.se.Len <- aggregate(Length ~ Day*Treatment*Secondary, data=ReExp, std.error)
+ReExp.avg.Wid <- aggregate(Width ~ Day*Treatment*Secondary, data=ReExp, mean)
+ReExp.se.Wid <- aggregate(Width ~ Day*Treatment*Secondary, data=ReExp, std.error)
+ReExp.avg.Ratio <- aggregate(Ratio ~ Day*Treatment*Secondary, data=ReExp, mean)
+ReExp.se.Ratio<- aggregate(Ratio ~ Day*Treatment*Secondary, data=ReExp, std.error)
+ReExp.avg.ARel <- aggregate(A.rel ~ Day*Treatment*Secondary, data=ReExp, mean)
+ReExp.se.ARel<- aggregate(A.rel ~ Day*Treatment*Secondary, data=ReExp, std.error)
+ReExp.Shell.size <- cbind(ReExp.avg.area, ReExp.se.area$Area, ReExp.avg.Len$Length, ReExp.se.Len$Length, ReExp.avg.Wid$Width, ReExp.se.Wid$Width,ReExp.avg.Ratio$Ratio, ReExp.se.Ratio$Ratio, ReExp.avg.ARel$A.rel, ReExp.se.ARel$A.rel)
+colnames(ReExp.Shell.size) <- c("Day", "Treatment", "Secondary", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel")
 
 # Significance testing for initial exposure and common garden
-Init <- aov(log10(Area) ~ Treatment*Day, data=Initial)
+Init <- aov(log10(Ratio) ~ Treatment*Day, data=Initial)
 anova(Init)
 par(mfrow=c(3,3))
 hist(Init$residuals)
@@ -270,10 +531,10 @@ posthoc.135
 
 rect <- data.frame(xmin=3.1, xmax=Inf, ymin=-Inf, ymax=Inf) #identify background shading placement
 
-Fig1 <- ggplot(Init.Shell.size, aes(x=Day, y=avg.area, group=Treatment)) + 
+Fig.Exp1.size <- ggplot(Init.Shell.size, aes(x=Day, y=avg.area, group=Treatment)) + 
   geom_errorbar(aes(ymin=Init.Shell.size$avg.area-Init.Shell.size$se.area, ymax=Init.Shell.size$avg.area+Init.Shell.size$se.area), colour="black", width=.1, position = position_dodge(width = 0.6)) +
   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
-  geom_point(aes(shape=Treatment), size = 4, position = position_dodge(width = 0.6)) +
+  geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.6)) +
   xlab("Days") +
   ylab("Seed Shell Area mm^2") +
   ylim(20,130) +
@@ -288,7 +549,7 @@ Fig1 <- ggplot(Init.Shell.size, aes(x=Day, y=avg.area, group=Treatment)) +
             color="gray",
             alpha=0.5,
             inherit.aes = FALSE)
-Fig1
+Fig.Exp1.size
 
 # Significance testing for secondary exposure
 Rexp <- aov(log10(Area) ~ Treatment*Secondary, data=ReExp)
@@ -304,13 +565,13 @@ Rexp.posthoc
 
 #Day145 <- subset(seed.size, Day==145, select = Date:Area)
 
-Fig2 <- ggplot(ReExp.Shell.size, aes(x=Secondary, y=avg.area, group=Treatment)) + 
-  geom_errorbar(aes(ymin=ReExp.Shell.size$avg.area-ReExp.Shell.size$se.area, ymax=ReExp.Shell.size$avg.area+ReExp.Shell.size$se.area), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+Fig.Exp2.size <- ggplot(ReExp.Shell.size, aes(x=Secondary, y=avg.Arel, group=Treatment)) + 
+  geom_errorbar(aes(ymin=ReExp.Shell.size$avg.Arel-ReExp.Shell.size$se.Arel, ymax=ReExp.Shell.size$avg.Arel+ReExp.Shell.size$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.05)) +
   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
-  geom_point(aes(shape=Treatment), size = 4, position = position_dodge(width = 0.05)) +
+  geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.05)) +
   xlab("Secondary Exposure") +
-  ylab("Seed Shell Area mm^2") +
-  ylim(20,130) +
+  ylab("Relative Size") +
+  #ylim(20,130) +
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
@@ -319,53 +580,24 @@ Fig2 <- ggplot(ReExp.Shell.size, aes(x=Secondary, y=avg.area, group=Treatment)) 
         panel.grid.minor = element_blank(), #Set the minor gridlines
         plot.background=element_blank()) #Set the plot background
 
-Fig2
-
-#CAPTURE ALL STATISTICAL OUTPUT TO FILE
-setwd(file.path(mainDir, 'Output'))
-capture.output(Init, Rexp, file="Geoduck_Juvenile_Statistical_Results.txt")
-
-#CAPTURE ALL FIGURES TO FILE
-FigureX <- arrangeGrob(Fig1, Fig2, ncol=1)
-ggsave(file="Geoduck_Size.pdf", FigureX, width = 6.5, height = 8, units = c("in"))
-
-setwd(file.path(mainDir, 'Data'))
-
-##### Avtech Data #####
-#Load WiSH data
-wish.data <- read.csv("Wish_data_Seed.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-date.time <- sub("-",",", wish.data$Date...Time)
-date.time <- strsplit(date.time, ",")
-date.time <- data.frame(matrix(unlist(date.time), nrow=length(date.time), byrow=T),stringsAsFactors=FALSE)
-temp.data <- wish.data[,grepl("Tank", colnames(wish.data))] #search for and subset columns containing the header name "Tank"
-temp.data <- cbind(date.time, temp.data)
-colnames(temp.data) <- c("Date", "Time", "Tank3", "Tank6", "Tank4", "Tank1", "Tank5", "Tank2")
-pH.data <-cbind(date.time, wish.data$pH.Exp.Treat...Custom.Value, wish.data$ph.Exp.Control...Custom.Value, wish.data$Header.2...c...Custom.Value, wish.data$Header.1...tr...Custom.Value)
-colnames(pH.data) <- c("Date", "Time", "TpH7.38", "TpH7.04", "HpH7.04","HpH7.38")
-
-  
-##plot temp data
-plot(temp.data$Tank1,type="l", col="pink", ylab=expression(paste("Temperature °C")), xlab=expression(paste("Time")), ylim=c(10, 20))
-lines(temp.data$Tank2, col="lightblue" )
-lines(temp.data$Tank3, col="blue")
-lines(temp.data$Tank4, col="red")
-lines(temp.data$Tank5, col="darkred")
-lines(temp.data$Tank6, col="darkblue")
-legend("topleft", c("Tank1","Tank2", "Tank3","Tank4","Tank5", "Tank6" ), col=c("pink","lightblue", "blue", "red", "darkred", "darkblue"), bty="n", lwd=1, cex=0.6) 
-
-#plot pH Data
-plot(pH.data$TpH7.38,type="l", col="lightblue", ylab=expression(paste("pH")), xlab=expression(paste("Time")), ylim=c(6.8, 8.0))
-lines(pH.data$TpH7.04, col="pink" )
-lines(pH.data$HpH7.38, col="blue" )
-lines(pH.data$HpH7.04, col="red" )
-legend("topleft", c("Tank Low","Tank Super Low", "Header Low","Header Super Low"), col=c("lightblue","pink", "blue", "red"), bty="n", lwd=1, cex=0.6) 
+Fig.Exp2.size
 
 ##### CAPTURE STATISTICAL OUTPUT AND FIGURES TO FILE #####
 setwd(file.path(mainDir, 'Output'))
 capture.output(Init, Rexp, file="Geoduck_Juvenile_Statistical_Results.txt")
 
 #CAPTURE ALL FIGURES TO FILE
-FigureX <- arrangeGrob(Fig1, Fig2, ncol=1)
-ggsave(file="Geoduck_Size.pdf", FigureX, width = 6.5, height = 8, units = c("in"))
 
 
+blank<-rectGrob(gp=gpar(col="white"))
+
+Figure1.Size <- arrangeGrob(Fig.Exp1.size, Fig.Exp2.size, ncol=1)
+ggsave(file="Geoduck_Size.pdf", Figure1.Size, width = 6.5, height = 8, units = c("in"))
+
+FigureS1 <- arrangeGrob(Fig.E1.daily.pH, Fig.ICG.pH, blank, Fig.E2.daily.pH, ncol=4)
+ggsave(file="Fig.S1.pH.pdf", FigureS1, width = 11, height = 4, units = c("in"))
+
+FigureS2 <- arrangeGrob( blank, Fig.ICG.Temp, Fig.OCG.Temp, Fig.E2.daily.Temp, ncol=4)
+ggsave(file="Fig.S1.Temp.pdf", FigureS2, width = 11, height = 4, units = c("in"))
+
+setwd(file.path(mainDir, 'Data'))
