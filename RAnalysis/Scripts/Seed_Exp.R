@@ -18,6 +18,7 @@ library(plyr)
 library(gridExtra)
 
 #Required Data files
+#Flow_Juvenile_Geoduck.csv
 #Avtech_data_Juvenile_Geoduck_Exp1.csv
 #Avtech_Data_Juvenile_Geoduck_ICG.csv
 #Hobo_Temperature_Juvenile_Geoduck_OCG.csv
@@ -32,7 +33,15 @@ library(gridExtra)
 setwd("/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalysis/Data/") #set working directory
 mainDir<-'/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalysis/' #set main directory
 
-##### CONTINUOUS HEADER TANK PH EXPOSURE 1 #####
+##### DESCRIPTIVE STATISTICS FOR EXPERIMENTAL DESIGN #####
+Flow <- read.csv("Flow_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+#flow values measured in ml/10 sec
+Flow$Rate <- (((Flow$Rate1 + Flow$Rate2)/2)*6)/1000*60
+mean(Flow$Rate)
+sd(Flow$Rate)/sqrt(length(Flow$Rate))
+Flow.Rate <- cat("Flow (mean±sem, n) =", mean(Flow$Rate),  sd(Flow$Rate)/sqrt(length(Flow$Rate)), length(Flow$Rate))
+
+##### CONTINUOUS WATERBATH TEMPERATURE AND PH HEADER TANK EXPOSURE 1 #####
 #Avtech_data_Juvenile_Geoduck_Exp1.csv
 Exp1.pH <- read.csv("Avtech_data_Juvenile_Geoduck_Exp1.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
 Exp1.pH$Date.Time <-as.POSIXct(Exp1.pH$Date.Time, format="%m/%d/%y %H:%M")
@@ -43,13 +52,18 @@ pH.low.m <- aggregate(Header2.pH ~ Date, data = Exp1.pH, mean)
 pH.low.se <- aggregate(Header2.pH ~ Date, data = Exp1.pH, std.error)
 pH.med.m <- aggregate(Header1.pH ~ Date, data = Exp1.pH, mean)
 pH.med.se <- aggregate(Header1.pH ~ Date, data = Exp1.pH, std.error)
+pH.amb.m <- aggregate(Reservoir.pH ~ Date, data = Exp1.pH, mean)
+pH.amb.se <- aggregate(Reservoir.pH ~ Date, data = Exp1.pH, std.error)
 pH.low <- cbind(pH.low.m, pH.low.se$Header2.pH)
 pH.low$Treatment <- "Super.Low"
 colnames(pH.low) <- c("Date", "mean", "se", "Treatment")
 pH.med <- cbind(pH.med.m, pH.med.se$Header1.pH)
 pH.med$Treatment <- "Low"
 colnames(pH.med) <- c("Date", "mean", "se", "Treatment")
-daily.pH <- rbind(pH.low, pH.med)
+pH.amb <- cbind(pH.amb.m, pH.amb.se$Reservoir.pH)
+pH.amb$Treatment <- "Ambient"
+colnames(pH.amb) <- c("Date", "mean", "se", "Treatment")
+daily.pH <- rbind(pH.low, pH.med, pH.amb)
 daily.pH
 
 Fig.E1.daily.pH <- ggplot(daily.pH, aes(x=Date, y=mean, group=Treatment)) + 
@@ -65,10 +79,62 @@ Fig.E1.daily.pH <- ggplot(daily.pH, aes(x=Date, y=mean, group=Treatment)) +
         panel.border = element_blank(), #Set the border
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) #Set the plot background
+        plot.background=element_blank(), #Set the plot background
+        legend.position=c(.3, .65), #set legend location
+        legend.text = element_text(size = 5),
+        legend.key = element_blank(),
+        legend.title = element_text(size=6, face="bold")) +
+  ggtitle("A) Exposure 1") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
 Fig.E1.daily.pH
 
-##### CONTINUOUS TANK TEMPERATURE AND PH OF INDOOR COMMON GARDEN #####
+#Exposure 1 Waterbath Temperatures
+Exp1.Temp <- Exp1.pH
+Temp.low.m <- aggregate(Header2.Temp ~ Date, data = Exp1.Temp, mean)
+Temp.low.se <- aggregate(Header2.Temp ~ Date, data = Exp1.Temp, std.error)
+Temp.med.m <- aggregate(Header1.Temp ~ Date, data = Exp1.Temp, mean)
+Temp.med.se <- aggregate(Header1.Temp ~ Date, data = Exp1.Temp, std.error)
+Temp.amb.m <- aggregate(Reservoir.Temp ~ Date, data = Exp1.Temp, mean)
+Temp.amb.se <- aggregate(Reservoir.Temp ~ Date, data = Exp1.Temp, std.error)
+Temp.low <- cbind(Temp.low.m, Temp.low.se$Header2.Temp)
+Temp.low$Treatment <- "Super.Low"
+colnames(Temp.low) <- c("Date", "mean", "se", "Treatment")
+Temp.med <- cbind(Temp.med.m, Temp.med.se$Header1.Temp)
+Temp.med$Treatment <- "Low"
+colnames(Temp.med) <- c("Date", "mean", "se", "Treatment")
+Temp.amb <- cbind(Temp.amb.m, Temp.amb.se$Reservoir.Temp)
+Temp.amb$Treatment <- "Ambient"
+colnames(Temp.amb) <- c("Date", "mean", "se", "Treatment")
+daily.Temp <- rbind(Temp.low, Temp.med, Temp.amb)
+daily.Temp
+
+Fig.E1.daily.Temp <- ggplot(daily.Temp, aes(x=Date, y=mean, group=Treatment)) + 
+  geom_errorbar(aes(ymin=daily.Temp$mean-daily.Temp$se, ymax=daily.Temp$mean+daily.Temp$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
+  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
+  xlab("Time") +
+  ylab("Temperature °C") +
+  ylim(10, 20) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank(),#Set the plot background
+        legend.position=c(.4, .7), #set legend location
+        legend.text = element_text(size = 5),
+        legend.key = element_blank(),
+        legend.title = element_text(size=6, face="bold")) +
+  ggtitle("A) Exposure 1") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
+Fig.E1.daily.Temp
+
+##### CONTINUOUS TEMPERATURE AND PH OF INDOOR COMMON GARDEN #####
 #Avtech_Data_Juvenile_Geoduck_ICG.csv
 ICG <- read.csv("Avtech_Data_Juvenile_Geoduck_ICG.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
 ICG$Date.Time <-as.POSIXct(ICG$Date.Time, format="%m/%d/%y %H:%M")
@@ -86,14 +152,19 @@ Fig.ICG.Temp <- ggplot(ICG.Temps, aes(x=Date, y=mean)) +
   geom_point(aes(x=Date, y=mean), size = 2, position = position_dodge(width = 0.05)) +
   xlab("Time") +
   ylab("Temperature °C") +
-  ylim(0,20) +
+  ylim(10,20) +
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
         panel.border = element_blank(), #Set the border
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) #Set the plot background
+        plot.background=element_blank(), #Set the plot background
+        legend.key = element_blank()) + #remove legend background
+  ggtitle("B) Indoor Common Garden") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
 Fig.ICG.Temp
 
 ICG.pH.m <- aggregate(pH.Total ~ Date, data=ICG, mean)
@@ -114,7 +185,12 @@ Fig.ICG.pH <- ggplot(ICG.pH, aes(x=Date, y=mean)) +
         panel.border = element_blank(), #Set the border
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) #Set the plot background
+        plot.background=element_blank(), #Set the plot background
+        legend.key = element_blank()) + #remove legend background
+  ggtitle("B) Indoor Common Garden") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
 Fig.ICG.pH
 
 ##### CONTINUOUS TANK TEMPERATURE OUTDOOR COMMON GARDEN #####
@@ -135,7 +211,7 @@ Fig.OCG.Temp <- ggplot(OCG.Temps, aes(x=Date, y=mean), group=Treatment) +
   geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
   xlab("Time") +
   ylab("Temperature °C") +
-  ylim(0, 20) +
+  ylim(10, 20) +
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
@@ -143,10 +219,34 @@ Fig.OCG.Temp <- ggplot(OCG.Temps, aes(x=Date, y=mean), group=Treatment) +
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
         plot.background=element_blank(), #Set the plot background
-        legend.position = "none") #Removes the legend 
+        legend.position = "none") + #remove legend background
+  ggtitle("B) Indoor Common Garden") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
 Fig.OCG.Temp
 
-##### CONTINUOUS HEADER TANK PH EXPOSURE 2 #####
+#Blank plot for plotting grid
+Fig.OCG.pH <- ggplot(OCG.Temps, aes(x=Date, y=mean), group=Treatment) + #blank plot for plotting grid
+  geom_blank() +
+  xlab("Time") +
+  ylab("pH Total Scale") +
+  ylim(6.8, 8.0) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank(), #Set the plot background
+        legend.position = "none") + #Removes the legend
+  ggtitle("C) Outdoor Common Garden") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
+Fig.OCG.pH
+
+##### CONTINUOUS WATERBATH TEMPERATURE AND PH HEADER TANK EXPOSURE 2 #####
 #Avtech_data_Juvenile_Geoduck_Exp2.csv
 #Exposure 2 Waterbath pH
 Exp2.data <- read.csv("Avtech_data_Juvenile_Geoduck_Exp2.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
@@ -180,7 +280,12 @@ Fig.E2.daily.pH <- ggplot(E2.daily.pH, aes(x=Date, y=mean, group=Treatment)) +
         panel.border = element_blank(), #Set the border
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) #Set the plot background
+        plot.background=element_blank(), #Set the plot background
+        legend.position="none") +
+  ggtitle("D) Exposure 2") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
 Fig.E2.daily.pH
 
 #Exposure 2 Waterbath Temperatures
@@ -202,15 +307,20 @@ Fig.E2.daily.Temp <- ggplot(E2.daily.Temp, aes(x=Date, y=mean, group=Treatment))
   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
   geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
   xlab("Time") +
-  ylab("Temp Total Scale") +
-  ylim(0,20) +
+  ylab("Temperature °C") +
+  ylim(10,20) +
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
         panel.border = element_blank(), #Set the border
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) #Set the plot background
+        plot.background=element_blank(), #Set the plot background
+        legend.position="none") +
+  ggtitle("D) Exposure 2") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
 Fig.E2.daily.Temp
 
 ##### SEAWATER CHEMISTRY ANALYSIS FOR DISCRETE MEASUREMENTS #####
@@ -586,18 +696,14 @@ Fig.Exp2.size
 setwd(file.path(mainDir, 'Output'))
 capture.output(Init, Rexp, file="Geoduck_Juvenile_Statistical_Results.txt")
 
-#CAPTURE ALL FIGURES TO FILE
-
-
-blank<-rectGrob(gp=gpar(col="white"))
-
+#Capture Figures to File
 Figure1.Size <- arrangeGrob(Fig.Exp1.size, Fig.Exp2.size, ncol=1)
 ggsave(file="Geoduck_Size.pdf", Figure1.Size, width = 6.5, height = 8, units = c("in"))
 
-FigureS1 <- arrangeGrob(Fig.E1.daily.pH, Fig.ICG.pH, blank, Fig.E2.daily.pH, ncol=4)
+FigureS1 <- arrangeGrob(Fig.E1.daily.pH, Fig.ICG.pH, Fig.OCG.pH, Fig.E2.daily.pH, ncol=4)
 ggsave(file="Fig.S1.pH.pdf", FigureS1, width = 11, height = 4, units = c("in"))
 
-FigureS2 <- arrangeGrob( blank, Fig.ICG.Temp, Fig.OCG.Temp, Fig.E2.daily.Temp, ncol=4)
+FigureS2 <- arrangeGrob( Fig.E1.daily.Temp, Fig.ICG.Temp, Fig.OCG.Temp, Fig.E2.daily.Temp, ncol=4)
 ggsave(file="Fig.S1.Temp.pdf", FigureS2, width = 11, height = 4, units = c("in"))
 
 setwd(file.path(mainDir, 'Data'))
