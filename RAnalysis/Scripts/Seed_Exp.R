@@ -34,12 +34,35 @@ setwd("/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalys
 mainDir<-'/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalysis/' #set main directory
 
 ##### DESCRIPTIVE STATISTICS FOR EXPERIMENTAL DESIGN #####
-Flow <- read.csv("Flow_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+Flow1 <- read.csv("Flow1_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
 #flow values measured in ml/10 sec
-Flow$Rate <- (((Flow$Rate1 + Flow$Rate2)/2)*6)/1000*60
-mean(Flow$Rate)
-sd(Flow$Rate)/sqrt(length(Flow$Rate))
-Flow.Rate <- cat("Flow (mean±sem, n) =", mean(Flow$Rate),  sd(Flow$Rate)/sqrt(length(Flow$Rate)), length(Flow$Rate))
+Flow1$Rate <- (((Flow1$Rate1 + Flow1$Rate2)/2)*6)/1000*60
+mean(Flow1$Rate)
+sd(Flow1$Rate)/sqrt(length(Flow1$Rate))
+Flow1.Rate <- cat("Flow (mean±sem, n) =", mean(Flow1$Rate),  sd(Flow1$Rate)/sqrt(length(Flow1$Rate)), length(Flow1$Rate))
+
+FL1 <- aov(Rate ~ Treatment, data=Flow1)
+anova(FL1)
+par(mfrow=c(3,2))
+par(mar=c(1,1,1,1))
+hist(FL1$residuals)
+boxplot(FL1$residuals)
+plot(FL1)
+
+Flow2 <- read.csv("Flow2_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+#flow values measured in ml/10 sec
+Flow2$Rate <- ((Flow2$Rate1)*4)/1000*60
+mean(Flow2$Rate)
+sd(Flow2$Rate)/sqrt(length(Flow2$Rate))
+Flow2.Rate <- cat("Flow (mean±sem, n) =", mean(Flow2$Rate),  sd(Flow2$Rate)/sqrt(length(Flow2$Rate)), length(Flow2$Rate))
+
+FL2 <- aov(Rate ~ Treatment, data=Flow2)
+anova(FL2)
+par(mfrow=c(3,2))
+par(mar=c(1,1,1,1))
+hist(FL2$residuals)
+boxplot(FL2$residuals)
+plot(FL2)
 
 ##### CONTINUOUS WATERBATH TEMPERATURE AND PH HEADER TANK EXPOSURE 1 #####
 #Avtech_data_Juvenile_Geoduck_Exp1.csv
@@ -72,7 +95,7 @@ Fig.E1.daily.pH <- ggplot(daily.pH, aes(x=Date, y=mean, group=Treatment)) +
   geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
   xlab("Time") +
   ylab("pH Total Scale") +
-  ylim(6.8,8.0) +
+  ylim(6.8,8.1) +
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
@@ -178,7 +201,7 @@ Fig.ICG.pH <- ggplot(ICG.pH, aes(x=Date, y=mean)) +
   geom_point(aes(x=Date, y=mean), size = 2, position = position_dodge(width = 0.05)) +
   xlab("Time") +
   ylab("pH Total Scale") +
-  ylim(6.8, 8.0) +
+  ylim(6.8, 8.1) +
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
@@ -250,7 +273,7 @@ Fig.OCG.pH
 #Avtech_data_Juvenile_Geoduck_Exp2.csv
 #Exposure 2 Waterbath pH
 Exp2.data <- read.csv("Avtech_data_Juvenile_Geoduck_Exp2.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-Exp2.data$Date.Time <-as.POSIXct(Exp2.pH$Date.Time, format="%m/%d/%y %H:%M")
+Exp2.data$Date.Time <-as.POSIXct(Exp2.data$Date.Time, format="%m/%d/%y %H:%M")
 Exp2.data$Date <- as.Date(Exp2.data $Date.Time) #already got this one from the answers above
 Exp2.data$Time <- format(as.POSIXct(Exp2.data $Date.Time) ,format = "%H:%M:%S") 
 
@@ -273,7 +296,7 @@ Fig.E2.daily.pH <- ggplot(E2.daily.pH, aes(x=Date, y=mean, group=Treatment)) +
   geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
   xlab("Time") +
   ylab("pH Total Scale") +
-  ylim(6.8,8.0) +
+  ylim(6.8,8.1) +
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
@@ -553,8 +576,27 @@ plot(cells2.trt)
 ##### JUVENILE GEODUCK SHELL SIZE #####
 
 seed.size <- read.csv("Size_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+
 Initial <- subset(seed.size, Timepoint=="Initial", select = Date:Area)
+Initial <- subset(seed.size, Component=="Exp1", select = Date:Area)
 Initial$Ratio <- Initial$Length/Initial$Width
+
+#calculating mean for Exposure 1 normalizations
+T0.norms <- aggregate(Area ~ Day*Treatment, data=Initial, mean)
+
+T0.norm.area.amb <- subset(T0.norms, Day=="1" & Treatment=="Ambient", select = Area)
+T0.norm.area.med <- subset(T0.norms, Day=="1" & Treatment=="Medium", select = Area)
+T0.norm.area.high <- subset(T0.norms, Day=="1" & Treatment=="High", select = Area)
+
+T0.norms <- function(x) { 
+  if(x == "Ambient") y <- T0.norm.area.amb
+  if(x == "Medium") y <- T0.norm.area.med
+  if(x == "High") y <- T0.norm.area.high
+  return(y)
+}
+
+Initial$A.norm <- as.numeric(sapply(Initial$Treatment,T0.norms))
+Initial$A.rel <- Initial$Area/Initial$A.norm
 Init.avg.area <- aggregate(Area ~ Day*Treatment, data=Initial, mean)
 Init.se.area <- aggregate(Area ~ Day*Treatment, data=Initial, std.error)
 Init.avg.Len <- aggregate(Length ~ Day*Treatment, data=Initial, mean)
@@ -563,18 +605,50 @@ Init.avg.Wid <- aggregate(Width ~ Day*Treatment, data=Initial, mean)
 Init.se.Wid <- aggregate(Width ~ Day*Treatment, data=Initial, std.error)
 Init.avg.Ratio <- aggregate(Ratio ~ Day*Treatment, data=Initial, mean)
 Init.se.Ratio<- aggregate(Ratio ~ Day*Treatment, data=Initial, std.error)
-Init.Shell.size <- cbind(Init.avg.area, Init.se.area$Area, Init.avg.Len$Length, Init.se.Len$Length, Init.avg.Wid$Width, Init.se.Wid$Width,Init.avg.Ratio$Ratio, Init.se.Ratio$Ratio)
-colnames(Init.Shell.size) <- c("Day", "Treatment", "avg.area", "se.area", "avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio")
+Init.avg.ARel <- aggregate(A.rel ~ Day*Treatment, data=Initial, mean)
+Init.se.ARel<- aggregate(A.rel ~ Day*Treatment, data=Initial, std.error)
+Init.Shell.size <- cbind(Init.avg.area, Init.se.area$Area, Init.avg.Len$Length, Init.se.Len$Length, Init.avg.Wid$Width, Init.se.Wid$Width,Init.avg.Ratio$Ratio, Init.se.Ratio$Ratio, Init.avg.ARel$A.rel, Init.se.ARel$A.rel)
+colnames(Init.Shell.size) <- c("Day", "Treatment", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel")
 
-norm.area.amb <- subset(Init.avg.area, Day=="135" & Treatment=="Ambient", select = Area)
-norm.area.med <- subset(Init.avg.area, Day=="135" & Treatment=="Medium", select = Area)
-norm.area.high <- subset(Init.avg.area, Day=="135" & Treatment=="High", select = Area)
+#calculating mean for Common Garden normalizations
+E1.norm.area.amb <- subset(Init.Shell.size, Day=="23" & Treatment=="Ambient", select = avg.area)
+E1.norm.area.med <- subset(Init.Shell.size, Day=="23" & Treatment=="Medium", select = avg.area)
+E1.norm.area.high <- subset(Init.Shell.size, Day=="23" & Treatment=="High", select = avg.area)
 
+CG <- subset(seed.size, Component=="Common.Garden", select = Date:Area)
+CG$Ratio <- CG$Length/CG$Width
+#ifelse(CG$Treatment == "Medium", CG$A.norm <- E1.norm.area.amb, NA)
+
+E1.norms <- function(x) { 
+  if(x == "Ambient") y <- E1.norm.area.amb
+  if(x == "Medium") y <- E1.norm.area.med
+  if(x == "High") y <- E1.norm.area.high
+  return(y)
+}
+
+CG$A.norm <- as.numeric(sapply(CG$Treatment,E1.norms))
+CG$A.rel <- CG$Area/CG$A.norm
+CG.avg.area <- aggregate(Area ~ Day*Treatment, data=CG, mean)
+CG.se.area <- aggregate(Area ~ Day*Treatment, data=CG, std.error)
+CG.avg.Len <- aggregate(Length ~ Day*Treatment, data=CG, mean)
+CG.se.Len <- aggregate(Length ~ Day*Treatment, data=CG, std.error)
+CG.avg.Wid <- aggregate(Width ~ Day*Treatment, data=CG, mean)
+CG.se.Wid <- aggregate(Width ~ Day*Treatment, data=CG, std.error)
+CG.avg.Ratio <- aggregate(Ratio ~ Day*Treatment, data=CG, mean)
+CG.se.Ratio<- aggregate(Ratio ~ Day*Treatment, data=CG, std.error)
+CG.avg.ARel <- aggregate(A.rel ~ Day*Treatment, data=CG, mean)
+CG.se.ARel<- aggregate(A.rel ~ Day*Treatment, data=CG, std.error)
+CG.Shell.size <- cbind(CG.avg.area, CG.se.area$Area, CG.avg.Len$Length, CG.se.Len$Length, CG.avg.Wid$Width, CG.se.Wid$Width,CG.avg.Ratio$Ratio, CG.se.Ratio$Ratio, CG.avg.ARel$A.rel, CG.se.ARel$A.rel)
+colnames(CG.Shell.size) <- c("Day", "Treatment", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel")
+
+
+#calculating mean for Exposure 2 normalizations
+norm.area.amb <- subset(CG.Shell.size, Day=="135" & Treatment=="Ambient", select = avg.area)
+norm.area.med <- subset(CG.Shell.size, Day=="135" & Treatment=="Medium", select = avg.area)
+norm.area.high <- subset(CG.Shell.size, Day=="135" & Treatment=="High", select = avg.area)
 
 ReExp <- subset(seed.size, Timepoint=="Reexposure", select = Date:Area)
 ReExp$Ratio <- ReExp$Length/ReExp$Width
-
-ifelse(ReExp$Treatment == "Medium", ReExp$A.norm <- norm.area.amb, NA)
 
 norms <- function(x) { 
   if(x == "Ambient") y <- norm.area.amb
@@ -597,14 +671,25 @@ ReExp.avg.ARel <- aggregate(A.rel ~ Day*Treatment*Secondary, data=ReExp, mean)
 ReExp.se.ARel<- aggregate(A.rel ~ Day*Treatment*Secondary, data=ReExp, std.error)
 ReExp.Shell.size <- cbind(ReExp.avg.area, ReExp.se.area$Area, ReExp.avg.Len$Length, ReExp.se.Len$Length, ReExp.avg.Wid$Width, ReExp.se.Wid$Width,ReExp.avg.Ratio$Ratio, ReExp.se.Ratio$Ratio, ReExp.avg.ARel$A.rel, ReExp.se.ARel$A.rel)
 colnames(ReExp.Shell.size) <- c("Day", "Treatment", "Secondary", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel")
+ReExp.Shell.size$combos <- c("Ambient-Ambient", "Ambient-Ambient", "High-Ambient","High-Ambient","Medium-Ambient","Medium-Ambient","Ambient-Medium","Ambient-Medium","High-Medium","High-Medium","Medium-Medium","Medium-Medium")
 
-# Significance testing for initial exposure and common garden
-Init <- aov(log10(Ratio) ~ Treatment*Day, data=Initial)
-anova(Init)
-par(mfrow=c(3,3))
+# Significance testing for initial exposure
+Init <- aov(log10(A.rel) ~ Treatment*Day, data=Initial)
+Init.res <- anova(Init)
+par(mfrow=c(3,2))
+par(mar=c(1,1,1,1))
 hist(Init$residuals)
 boxplot(Init$residuals)
 plot(Init)
+
+# Significance testing for common garden
+CG <- aov(log10(A.rel) ~ Treatment*Day, data=CG)
+CG.res <- anova(CG)
+par(mfrow=c(3,2))
+par(mar=c(1,1,1,1))
+hist(CG$residuals)
+boxplot(CG$residuals)
+plot(CG)
 
 #posthoc <- TukeyHSD(x=X,conf.level=0.95)
 #posthoc
@@ -612,8 +697,8 @@ plot(Init)
 Day1 <- subset(Initial, Day==1, select = Date:Area)
 Day10 <- subset(Initial, Day==10, select = Date:Area)
 Day23 <- subset(Initial, Day==23, select = Date:Area)
-Day51 <- subset(Initial, Day==51, select = Date:Area)
-Day135 <- subset(Initial, Day==135, select = Date:Area)
+Day51 <- subset(CG, Day==51, select = Date:Area)
+Day135 <- subset(CG, Day==135, select = Date:Area)
 
 D1 <- aov(Area ~ Treatment, data=Day1)
 anova(D1)
@@ -639,65 +724,156 @@ hist(D135$residuals)
 posthoc.135 <- TukeyHSD(x=D135,conf.level=0.95)
 posthoc.135
 
-rect <- data.frame(xmin=3.1, xmax=Inf, ymin=-Inf, ymax=Inf) #identify background shading placement
+#rect <- data.frame(xmin=3.1, xmax=Inf, ymin=-Inf, ymax=Inf) #identify background shading placement
 
-Fig.Exp1.size <- ggplot(Init.Shell.size, aes(x=Day, y=avg.area, group=Treatment)) + 
-  geom_errorbar(aes(ymin=Init.Shell.size$avg.area-Init.Shell.size$se.area, ymax=Init.Shell.size$avg.area+Init.Shell.size$se.area), colour="black", width=.1, position = position_dodge(width = 0.6)) +
+Fig.Exp1.size <- ggplot(Init.Shell.size, aes(x=Day, y=avg.Arel, group=Treatment)) + 
+  geom_errorbar(aes(ymin=Init.Shell.size$avg.Arel-Init.Shell.size$se.Arel, ymax=Init.Shell.size$avg.Arel+Init.Shell.size$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.6)) +
   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
   geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.6)) +
+  scale_x_continuous(breaks=seq(0,160,10)) +
   xlab("Days") +
-  ylab("Seed Shell Area mm^2") +
-  ylim(20,130) +
+  ylab(expression(paste("Relative Size"))) +
+  ylim(0.5,3.5) +
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
         panel.border = element_blank(), #Set the border
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) + #Set the plot background
-  geom_rect(data=rect, aes(xmin=25, xmax=137, ymin=ymin, ymax=ymax),
-            color="gray",
-            alpha=0.5,
-            inherit.aes = FALSE)
+        plot.background=element_blank(),  #Set the plot background
+        legend.key = element_blank(),  #remove legend background
+        legend.position=c(.2, .7)) + #set legend location
+  ggtitle("A) Initial Exposure") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
 Fig.Exp1.size
 
+
+Fig.CG.size <- ggplot(CG.Shell.size, aes(x=Day, y=avg.Arel, group=Treatment)) + 
+  geom_errorbar(aes(ymin=CG.Shell.size$avg.Arel-CG.Shell.size$se.Arel, ymax=CG.Shell.size$avg.Arel+CG.Shell.size$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.6)) +
+  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
+  geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.6)) +
+  scale_x_continuous(breaks=seq(0,160,10)) +
+  xlab("Days") +
+  ylab(expression(paste("Relative Size"))) +
+  ylim(0.5,3.5) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank(),  #Set the plot background
+        legend.position='none') + #remove legend background
+  ggtitle("B) Common Garden") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
+Fig.CG.size
+
 # Significance testing for secondary exposure
-Rexp <- aov(log10(Area) ~ Treatment*Secondary, data=ReExp)
-anova(Rexp)
+Rexp <- aov(log10(Area) ~ Treatment*Secondary*Day, data=ReExp)
+Rexp.res <- anova(Rexp)
 #Check Assumptions
-par(mfrow=c(3,3))
+par(mfrow=c(3,2))
+par(mar=c(1,1,1,1))
 hist(Rexp$residuals)
 boxplot(Rexp$residuals)
 plot(Rexp)
 
-Rexp.posthoc <- TukeyHSD(x=Rexp,conf.level=0.95)
-Rexp.posthoc
+# Rexp.posthoc <- TukeyHSD(x=Rexp,conf.level=0.95)
+# Rexp.posthoc
 
-#Day145 <- subset(seed.size, Day==145, select = Date:Area)
+Day145 <- subset(ReExp.Shell.size, Day==145, select = Day:se.Arel)
+Day158 <- subset(ReExp.Shell.size, Day==158, select = Day:se.Arel)
 
-Fig.Exp2.size <- ggplot(ReExp.Shell.size, aes(x=Secondary, y=avg.Arel, group=Treatment)) + 
-  geom_errorbar(aes(ymin=ReExp.Shell.size$avg.Arel-ReExp.Shell.size$se.Arel, ymax=ReExp.Shell.size$avg.Arel+ReExp.Shell.size$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+Fig.Exp2.D10.size <- ggplot(Day145, aes(x=Secondary, y=avg.Arel, group=Treatment)) + 
+  geom_errorbar(aes(ymin=Day145$avg.Arel-Day145$se.Arel, ymax=Day145$avg.Arel+Day145$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.05)) +
   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
   geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.05)) +
-  xlab("Secondary Exposure") +
+  xlab("Secondary Treatment") +
   ylab("Relative Size") +
-  #ylim(20,130) +
+  ylim(0.5,1.5) +
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
         panel.border = element_blank(), #Set the border
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) #Set the plot background
+        plot.background=element_blank(), #Set the plot background
+        legend.position='none') + #remove legend background
+  ggtitle("C) Secondary Exposure Day 10") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
 
-Fig.Exp2.size
+Fig.Exp2.D10.size
+
+
+Fig.Exp2.D23.size <- ggplot(Day158, aes(x=Secondary, y=avg.Arel, group=Treatment)) + 
+  geom_errorbar(aes(ymin=Day158$avg.Arel-Day158$se.Arel, ymax=Day158$avg.Arel+Day158$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.05)) +
+  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
+  geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.05)) +
+  xlab("Secondary Treatment") +
+  ylab("Relative Size") +
+  ylim(0.5,1.5) +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank(), #Set the plot background
+        legend.position='none') + #remove legend background
+  ggtitle("D) Secondary Exposure Day 23") +
+  theme(plot.title = element_text(face = 'bold', 
+                                  size = 12, 
+                                  hjust = 0))
+
+Fig.Exp2.D23.size
+
+
+#all size over time
+All.avg.area <- aggregate(Area ~ Day*Treatment*Secondary, data=seed.size, mean)
+All.se.area <- aggregate(Area ~ Day*Treatment*Secondary, data=seed.size, std.error)
+
+All <- cbind(All.avg.area, All.se.area$Area)
+colnames(All) <- c("Day",  "Treatment",	"Secondary",	"mean", "se")
+#All$grps <- c("pH8.0", "pH8.0","pH8.0","pH8.0","pH8.0","pH8.0","pH7.4", "pH7.4", "pH7.4", "pH7.4", "pH7.4", "pH7.4", "None", "None", "None", "None", "None","None","None", "None","None", "None", "None","None","None","None","None")
+
+# #grouped plotting over time
+# Fig.Time <- ggplot(All, aes(x=Day, y=mean, group=Treatment)) + 
+#   geom_errorbar(aes(ymin=All$mean-All$se, ymax=All$mean+All$se), colour="black", width=.1, position = position_dodge(width = 0.6)) +
+#   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
+#   geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.6)) +
+#   #scale_shape_manual(values = c(16, 21, 15, 22, 17,24)) +
+#   scale_x_continuous(breaks=seq(0,160,10)) +
+#   xlab("Days") +
+#   ylab(expression(paste("Relative Size"))) +
+#   #ylim(0.5,3.5) +
+#   theme_bw() + #Set the background color
+#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+#         axis.line = element_line(color = 'black'), #Set the axes color
+#         panel.border = element_blank(), #Set the border
+#         panel.grid.major = element_blank(), #Set the major gridlines
+#         panel.grid.minor = element_blank(), #Set the minor gridlines
+#         plot.background=element_blank(),  #Set the plot background
+#         legend.key = element_blank(),  #remove legend background
+#         legend.position=c(.2, .6)) + #set legend location
+#   ggtitle("E) Exposure 2 over time") +
+#   theme(plot.title = element_text(face = 'bold', 
+#                                   size = 12, 
+#                                   hjust = 0))
+# Fig.Time
+
 
 ##### CAPTURE STATISTICAL OUTPUT AND FIGURES TO FILE #####
 setwd(file.path(mainDir, 'Output'))
-capture.output(Init, Rexp, file="Geoduck_Juvenile_Statistical_Results.txt")
+capture.output(Init.res, CG.res, Rexp.res, file="Geoduck_Juvenile_Statistical_Results.txt")
 
 #Capture Figures to File
-Figure1.Size <- arrangeGrob(Fig.Exp1.size, Fig.Exp2.size, ncol=1)
+Figure1.Size <- arrangeGrob(Fig.Exp1.size,Fig.CG.size, Fig.Exp2.D10.size, Fig.Exp2.D23.size, ncol=2)
 ggsave(file="Geoduck_Size.pdf", Figure1.Size, width = 6.5, height = 8, units = c("in"))
 
 FigureS1 <- arrangeGrob(Fig.E1.daily.pH, Fig.ICG.pH, Fig.OCG.pH, Fig.E2.daily.pH, ncol=4)

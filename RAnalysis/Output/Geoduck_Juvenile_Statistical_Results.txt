@@ -1,21 +1,34 @@
-Call:
-   aov(formula = log10(Area) ~ Treatment * Day, data = Initial)
+Analysis of Variance Table
 
-Terms:
-                Treatment       Day Treatment:Day Residuals
-Sum of Squares   0.256210 15.726756      0.067174  5.475940
-Deg. of Freedom         2         1             2       282
+Response: log10(A.rel)
+              Df  Sum Sq Mean Sq F value    Pr(>F)    
+Treatment      2 0.30510 0.15255  11.512 3.197e-05 ***
+Day            1 0.35501 0.35501  26.791 1.190e-06 ***
+Treatment:Day  2 0.03138 0.01569   1.184    0.3103    
+Residuals     99 1.31185 0.01325                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Analysis of Variance Table
 
-Residual standard error: 0.1393493
-Estimated effects may be unbalanced
-9 observations deleted due to missingness
-Call:
-   aov(formula = log10(Area) ~ Treatment * Secondary, data = ReExp)
+Response: log10(A.rel)
+               Df  Sum Sq Mean Sq F value    Pr(>F)    
+Treatment       2 0.66870 0.33435 34.1683 2.829e-13 ***
+Day             1 0.60491 0.60491 61.8183 3.554e-13 ***
+Treatment:Day   2 0.01701 0.00850  0.8692    0.4211    
+Residuals     177 1.73200 0.00979                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Analysis of Variance Table
 
-Terms:
-                Treatment Secondary Treatment:Secondary Residuals
-Sum of Squares  0.0201014 0.0104715           0.0566791 0.4617524
-Deg. of Freedom         2         1                   2        54
-
-Residual standard error: 0.09247146
-Estimated effects may be unbalanced
+Response: log10(Area)
+                         Df  Sum Sq  Mean Sq F value   Pr(>F)   
+Treatment                 2 0.02750 0.013750  1.4161 0.246590   
+Secondary                 1 0.08010 0.080104  8.2495 0.004802 **
+Day                       1 0.00003 0.000030  0.0031 0.955618   
+Treatment:Secondary       2 0.10549 0.052744  5.4319 0.005488 **
+Treatment:Day             2 0.01449 0.007244  0.7460 0.476373   
+Secondary:Day             1 0.01276 0.012758  1.3139 0.253922   
+Treatment:Secondary:Day   2 0.01179 0.005897  0.6073 0.546455   
+Residuals               123 1.19434 0.009710                    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
