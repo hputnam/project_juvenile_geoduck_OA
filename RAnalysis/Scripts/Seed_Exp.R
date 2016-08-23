@@ -3,17 +3,17 @@
 #Title:
 #Contact: Hollie Putnam hollieputnam@gmail.com ; Steven Roberts sr320@u.washington.edu
 #Supported by: NOAA OA
-#last modified 20160708 H Putnam
+#last modified 20160822 H Putnam
 #See Readme file for project details 
 #See metadata file for details on data files and equipment 
 
 rm(list=ls()) # removes all prior objects
 
 #Read in required libraries
-library(seacarb) #seawater carbonate chemistry
-library(reshape) #reshape data
-library(plotrix) #functions in tapply
-library(ggplot2)
+library(seacarb) 
+library(reshape) 
+library(plotrix) 
+library(ggplot2) 
 library(plyr)
 library(gridExtra)
 
@@ -36,66 +36,128 @@ mainDir<-'/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAna
 ##### DESCRIPTIVE STATISTICS FOR EXPERIMENTAL DESIGN #####
 Flow1 <- read.csv("Flow1_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
 #flow values measured in ml/10 sec
-Flow1$Rate <- (((Flow1$Rate1 + Flow1$Rate2)/2)*6)/1000*60
-mean(Flow1$Rate)
-sd(Flow1$Rate)/sqrt(length(Flow1$Rate))
-Flow1.Rate <- cat("Flow (mean±sem, n) =", mean(Flow1$Rate),  sd(Flow1$Rate)/sqrt(length(Flow1$Rate)), length(Flow1$Rate))
+Flow1$Rate <- (((Flow1$Rate1 + Flow1$Rate2)/2)*6)/1000*60 #calculate flow rate in liters per hour
+Flow1.Rate <- cat("Flow (mean±sem, n) =", mean(Flow1$Rate),  sd(Flow1$Rate)/sqrt(length(Flow1$Rate)), length(Flow1$Rate)) #calculate, concatenate and print average±sem flow rate
 
-FL1 <- aov(Rate ~ Treatment, data=Flow1)
-anova(FL1)
-par(mfrow=c(3,2))
-par(mar=c(1,1,1,1))
-hist(FL1$residuals)
-boxplot(FL1$residuals)
-plot(FL1)
+FL1 <- aov(Rate ~ Treatment, data=Flow1) #test for differences in flow rate between treatments
+FL1.res <- anova(FL1) #display anova results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(FL1$residuals) #plot histogram of residuals
+boxplot(FL1$residuals) #plot boxplot of residuals
+plot(FL1) #display residuals versus fitter, normal QQ plot, leverage plot
 
 Flow2 <- read.csv("Flow2_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-#flow values measured in ml/10 sec
-Flow2$Rate <- ((Flow2$Rate1)*4)/1000*60
-mean(Flow2$Rate)
-sd(Flow2$Rate)/sqrt(length(Flow2$Rate))
-Flow2.Rate <- cat("Flow (mean±sem, n) =", mean(Flow2$Rate),  sd(Flow2$Rate)/sqrt(length(Flow2$Rate)), length(Flow2$Rate))
+#flow values measured in ml/15 sec
+Flow2$Rate <- ((Flow2$Rate1)*4)/1000*60 #calculate flow rate in liters per hour
+Flow2.Rate <- cat("Flow (mean±sem, n) =", mean(Flow2$Rate),  sd(Flow2$Rate)/sqrt(length(Flow2$Rate)), length(Flow2$Rate)) #calculate, concatenate and print average±sem flow rate
 
-FL2 <- aov(Rate ~ Treatment, data=Flow2)
-anova(FL2)
-par(mfrow=c(3,2))
-par(mar=c(1,1,1,1))
-hist(FL2$residuals)
-boxplot(FL2$residuals)
-plot(FL2)
+FL2 <- aov(Rate ~ Treatment, data=Flow2) #test for differences in flow rate between treatments
+FL2.res <-anova(FL2) #display anova results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(FL2$residuals) #plot histogram of residuals
+boxplot(FL2$residuals) #plot boxplot of residuals
+plot(FL2) #display residuals versus fitter, normal QQ plot, leverage plot
 
-##### CONTINUOUS WATERBATH TEMPERATURE AND PH HEADER TANK EXPOSURE 1 #####
-#Avtech_data_Juvenile_Geoduck_Exp1.csv
-Exp1.pH <- read.csv("Avtech_data_Juvenile_Geoduck_Exp1.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-Exp1.pH$Date.Time <-as.POSIXct(Exp1.pH$Date.Time, format="%m/%d/%y %H:%M")
-Exp1.pH$Date <- as.Date(Exp1.pH$Date.Time) #already got this one from the answers above
-Exp1.pH$Time <- format(as.POSIXct(Exp1.pH$Date.Time) ,format = "%H:%M:%S") 
+#Feeding
+#Exposure1
+#Cell_Counts_Juvenile_Geoduck_Exp1.csv
+cells.1 <- read.csv("Cell_Counts_Juvenile_Geoduck_Exp1.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+cells.1$Avg.Cells <- rowMeans(cells.1[,c("Count1",  "Count2")], na.rm = TRUE) #calculate average of counts
+cells.1$cell.num <- cells.1$Avg.Cells/cells.1$Volume.Counted #calculate density
 
-pH.low.m <- aggregate(Header2.pH ~ Date, data = Exp1.pH, mean)
-pH.low.se <- aggregate(Header2.pH ~ Date, data = Exp1.pH, std.error)
-pH.med.m <- aggregate(Header1.pH ~ Date, data = Exp1.pH, mean)
-pH.med.se <- aggregate(Header1.pH ~ Date, data = Exp1.pH, std.error)
-pH.amb.m <- aggregate(Reservoir.pH ~ Date, data = Exp1.pH, mean)
-pH.amb.se <- aggregate(Reservoir.pH ~ Date, data = Exp1.pH, std.error)
-pH.low <- cbind(pH.low.m, pH.low.se$Header2.pH)
-pH.low$Treatment <- "Super.Low"
-colnames(pH.low) <- c("Date", "mean", "se", "Treatment")
-pH.med <- cbind(pH.med.m, pH.med.se$Header1.pH)
-pH.med$Treatment <- "Low"
-colnames(pH.med) <- c("Date", "mean", "se", "Treatment")
-pH.amb <- cbind(pH.amb.m, pH.amb.se$Reservoir.pH)
-pH.amb$Treatment <- "Ambient"
-colnames(pH.amb) <- c("Date", "mean", "se", "Treatment")
-daily.pH <- rbind(pH.low, pH.med, pH.amb)
-daily.pH
+avg.cells.tank.1 <- do.call(data.frame,aggregate(cell.num ~ Tank, data = cells.1, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each Tank
+avg.cells.trt.1 <- do.call(data.frame,aggregate(cell.num ~ Treatment, data = cells.1, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each Treatment
+colnames(avg.cells.tank.1) <- c("Tank", "mean", "se") #rename columns 
+colnames(avg.cells.trt.1) <- c("Treatment", "mean", "se") #rename columns 
 
-Fig.E1.daily.pH <- ggplot(daily.pH, aes(x=Date, y=mean, group=Treatment)) + 
-  geom_errorbar(aes(ymin=daily.pH$mean-daily.pH$se, ymax=daily.pH$mean+daily.pH$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
-  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
-  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
-  xlab("Time") +
-  ylab("pH Total Scale") +
-  ylim(6.8,8.1) +
+cells1.tank <- aov(cell.num ~Tank, data=cells.1) #test the hypothesis feeding does not differ between tanks
+cells1.tank.res <-anova(cells1.tank) #display anova results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(cells1.tank$residuals) #plot histogram of residuals
+boxplot(cells1.tank$residuals) #plot boxplot of residuals
+plot(cells1.tank) #display residuals versus fitter, normal QQ plot, leverage plot
+
+cells1.trt <- aov(cell.num ~Treatment, data=cells.1) #test the hypothesis feeding does not differ between treatments
+cells1.trt.res <-anova(cells1.trt) #display anova results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(cells1.trt$residuals) #plot histogram of residuals
+boxplot(cells1.trt$residuals) #plot boxplot of residuals
+plot(cells1.trt) #display residuals versus fitter, normal QQ plot, leverage plot
+
+#Exposure2
+#Cell_Counts_Juvenile_Geoduck_Exp2.csv
+cells.2 <- read.csv("Cell_Counts_Juvenile_Geoduck_Exp2.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+cells.2$cell.num <- rowMeans(cells.2[,c("Count1",  "Count2", "Count3")], na.rm = TRUE) #calculate average of counts
+avg.cells.tank.2 <- do.call(data.frame,aggregate(cell.num ~ Tank, data = cells.2, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each Tank
+avg.cells.trt.2 <- do.call(data.frame,aggregate(cell.num ~ Treatment, data = cells.2, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each Treatment
+colnames(avg.cells.tank.2) <- c("Tank", "mean", "se") #rename columns 
+colnames(avg.cells.trt.2) <- c("Treatment", "mean", "se") #rename columns 
+
+Fig.Exp2.cells <- ggplot(avg.cells.tank.2, aes(x=Tank, y=mean)) + 
+  geom_errorbar(aes(ymin=avg.cells.tank.2$mean-avg.cells.tank.2$se, ymax=avg.cells.tank.2$mean+avg.cells.tank.2$se), colour="black", width=.1, position = position_dodge(width = 0.6)) +  
+  geom_point(aes(), size = 3, position = position_dodge(width = 0.6)) +
+  xlab("Tanks") +
+  ylab("cells per ml") +
+  theme_bw() + #Set the background color
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
+        axis.line = element_line(color = 'black'), #Set the axes color
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background=element_blank()) 
+Fig.Exp2.cells
+
+cells2.tank <- aov(cell.num ~Tank, data=cells.2) #test the hypothesis feeding does not differ between tanks
+cells2.tank.res <-anova(cells2.tank) #display anova results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(cells2.tank$residuals) #plot histogram of residuals
+boxplot(cells2.tank$residuals) #plot boxplot of residuals
+plot(cells2.tank) #display residuals versus fitter, normal QQ plot, leverage plot
+
+cells2.trt <- aov(cell.num ~Treatment, data=cells.2) #test the hypothesis feeding does not differ between treatments
+cells2.trt.res <-anova(cells2.trt) #display anova results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(cells2.trt$residuals) #plot histogram of residuals
+boxplot(cells2.trt$residuals) #plot boxplot of residuals
+plot(cells2.trt) #display residuals versus fitter, normal QQ plot, leverage plot
+
+##### CONTINUOUS EXPERIMENTAL PH DATA #####
+#Avtech_pH_data.csv
+pH <- read.csv("Avtech_pH_data.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+pH$Date.Time <-as.POSIXct(pH$Date.Time, format="%m/%d/%y %H:%M") #convert date format
+pH$Date <- as.Date(pH$Date.Time) #convert Date only
+pH$Time <- format(as.POSIXct(pH$Date.Time) ,format = "%H:%M:%S") #convert Time only
+
+pH.low <- do.call(data.frame,aggregate(Low ~ Date, data = pH, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each treatment by Day
+pH.med <- do.call(data.frame,aggregate(Medium ~ Date, data = pH, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each treatment by Day
+pH.amb <- do.call(data.frame,aggregate(Ambient ~ Date, data = pH, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each treatment by Day
+pH.low$Treatment <- "Low" #Add treatment Information
+colnames(pH.low) <- c("Date", "mean", "se", "Treatment") #rename columns to generic format
+pH.med$Treatment <- "Medium" #Add treatment Information
+colnames(pH.med) <- c("Date", "mean", "se", "Treatment") #rename columns to generic format
+pH.amb$Treatment <- "Ambient" #Add treatment Information
+colnames(pH.amb) <- c("Date", "mean", "se", "Treatment") #rename columns to generic format
+daily.pH <- rbind(pH.amb, pH.med, pH.low) #bind treatment data 
+daily.pH #view data
+
+# Plot daily averages of pH data for the complete experiment
+All.pH <- ggplot(daily.pH, aes(x=Date, y=mean, group=Treatment)) + #set up plot information
+  geom_errorbar(aes(ymin=daily.pH$mean-daily.pH$se, ymax=daily.pH$mean+daily.pH$se), colour="black", width=.1, position = position_dodge(width = 0.05)) + #add standard error bars about the mean
+  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) + #include points in the shape of the treatments
+  annotate("text", x=as.Date("2016-03-25"), y=7.95, label = "No Data") + #add text to the graphic where data are missing
+  annotate("text", x=as.Date("2016-06-15"), y=7.95, label = "No Data") + #add text to the graphic where data are missing
+  xlab("Time") + #label x axis
+  ylab("pH Total Scale") + # label y axis
+  ylim(6.8,8.1) + # set y axis scale
+  geom_vline(xintercept = 16899, linetype="dotted", color = "gray", size=1) + #add vertical line
+  geom_vline(xintercept = 16928, linetype="dashed", color = "gray", size=1) + #add vertical line
+  geom_vline(xintercept = 17013, linetype="dotted", color = "gray", size=1) + #add vertical line
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
@@ -103,79 +165,45 @@ Fig.E1.daily.pH <- ggplot(daily.pH, aes(x=Date, y=mean, group=Treatment)) +
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
         plot.background=element_blank(), #Set the plot background
-        legend.position=c(.3, .65), #set legend location
-        legend.text = element_text(size = 5),
-        legend.key = element_blank(),
-        legend.title = element_text(size=6, face="bold")) +
-  ggtitle("A) Exposure 1") +
+        legend.position=c(.65, .25), #set legend location
+        legend.text = element_text(size = 8), #set the legend text size
+        legend.key = element_blank(), #remove the legend background
+        legend.title = element_text(size=8, face="bold")) + #set legend title attributes
+  ggtitle("A) Experimental pH") + #add a main title
   theme(plot.title = element_text(face = 'bold', 
                                   size = 12, 
-                                  hjust = 0))
-Fig.E1.daily.pH
+                                  hjust = 0)) #set title attributes
+All.pH #view plot
 
-#Exposure 1 Waterbath Temperatures
-Exp1.Temp <- Exp1.pH
-Temp.low.m <- aggregate(Header2.Temp ~ Date, data = Exp1.Temp, mean)
-Temp.low.se <- aggregate(Header2.Temp ~ Date, data = Exp1.Temp, std.error)
-Temp.med.m <- aggregate(Header1.Temp ~ Date, data = Exp1.Temp, mean)
-Temp.med.se <- aggregate(Header1.Temp ~ Date, data = Exp1.Temp, std.error)
-Temp.amb.m <- aggregate(Reservoir.Temp ~ Date, data = Exp1.Temp, mean)
-Temp.amb.se <- aggregate(Reservoir.Temp ~ Date, data = Exp1.Temp, std.error)
-Temp.low <- cbind(Temp.low.m, Temp.low.se$Header2.Temp)
-Temp.low$Treatment <- "Super.Low"
-colnames(Temp.low) <- c("Date", "mean", "se", "Treatment")
-Temp.med <- cbind(Temp.med.m, Temp.med.se$Header1.Temp)
-Temp.med$Treatment <- "Low"
-colnames(Temp.med) <- c("Date", "mean", "se", "Treatment")
-Temp.amb <- cbind(Temp.amb.m, Temp.amb.se$Reservoir.Temp)
-Temp.amb$Treatment <- "Ambient"
-colnames(Temp.amb) <- c("Date", "mean", "se", "Treatment")
-daily.Temp <- rbind(Temp.low, Temp.med, Temp.amb)
-daily.Temp
+##### CONTINUOUS EXPERIMENTAL TEMPERATURE DATA #####
+#Avtech_temp_data.csv
+temp <- read.csv("Avtech_temp_data.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+temp$Date.Time <-as.POSIXct(temp$Date.Time, format="%m/%d/%y %H:%M") #convert date format
+temp$Date <- as.Date(temp$Date.Time) #convert Date only
+temp$Time <- format(as.POSIXct(temp$Date.Time) ,format = "%H:%M:%S") #convert time only
 
-Fig.E1.daily.Temp <- ggplot(daily.Temp, aes(x=Date, y=mean, group=Treatment)) + 
-  geom_errorbar(aes(ymin=daily.Temp$mean-daily.Temp$se, ymax=daily.Temp$mean+daily.Temp$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
-  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
-  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
-  xlab("Time") +
-  ylab("Temperature °C") +
-  ylim(10, 20) +
-  theme_bw() + #Set the background color
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-        axis.line = element_line(color = 'black'), #Set the axes color
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank(),#Set the plot background
-        legend.position=c(.4, .7), #set legend location
-        legend.text = element_text(size = 5),
-        legend.key = element_blank(),
-        legend.title = element_text(size=6, face="bold")) +
-  ggtitle("A) Exposure 1") +
-  theme(plot.title = element_text(face = 'bold', 
-                                  size = 12, 
-                                  hjust = 0))
-Fig.E1.daily.Temp
+temp.low <- do.call(data.frame,aggregate(Low ~ Date, data = temp, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each treatment by Day
+temp.med <- do.call(data.frame,aggregate(Medium ~ Date, data = temp, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each treatment by Day
+temp.amb <- do.call(data.frame,aggregate(Ambient ~ Date, data = temp, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each treatment by Day
+temp.low$Treatment <- "Low" #Add treatment Information
+colnames(temp.low) <- c("Date", "mean", "se", "Treatment") #rename columns to generic format
+temp.med$Treatment <- "Medium" #Add treatment Information
+colnames(temp.med) <- c("Date", "mean", "se", "Treatment") #rename columns to generic format
+temp.amb$Treatment <- "Ambient" #Add treatment Information
+colnames(temp.amb) <- c("Date", "mean", "se", "Treatment") #rename columns to generic format
+daily.temp <- rbind(temp.amb, temp.med, temp.low) #bind treatment data 
+daily.temp #view data
 
-##### CONTINUOUS TEMPERATURE AND PH OF INDOOR COMMON GARDEN #####
-#Avtech_Data_Juvenile_Geoduck_ICG.csv
-ICG <- read.csv("Avtech_Data_Juvenile_Geoduck_ICG.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-ICG$Date.Time <-as.POSIXct(ICG$Date.Time, format="%m/%d/%y %H:%M")
-ICG$Date <- as.Date(ICG$Date.Time) 
-ICG$Time <- format(as.POSIXct(ICG$Date.Time) ,format = "%H:%M:%S") 
-
-ICG.Temps.m <- aggregate(Temp.C ~ Date, data=ICG, mean)
-ICG.Temps.se <- aggregate(Temp.C ~ Date, data=ICG, std.error)
-ICG.Temps <- cbind(ICG.Temps.m, ICG.Temps.se$Temp.C)
-colnames(ICG.Temps) <- c("Date", "mean", "se")
-
-Fig.ICG.Temp <- ggplot(ICG.Temps, aes(x=Date, y=mean)) + 
-  geom_errorbar(aes(ymin=ICG.Temps$mean-ICG.Temps$se, ymax=ICG.Temps$mean+ICG.Temps$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
-  geom_line(aes(x=Date, y=mean), size = 0.5, position = position_dodge(width = 0.05)) +   
-  geom_point(aes(x=Date, y=mean), size = 2, position = position_dodge(width = 0.05)) +
-  xlab("Time") +
-  ylab("Temperature °C") +
-  ylim(10,20) +
+All.temp <- ggplot(daily.temp, aes(x=Date, y=mean, group=Treatment)) + #set up plot information
+  geom_errorbar(aes(ymin=daily.temp$mean-daily.temp$se, ymax=daily.temp$mean+daily.temp$se), colour="black", width=.1, position = position_dodge(width = 0.05)) + #add standard error bars about the mean
+  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) + #include points in the shape of the treatments
+  annotate("text", x=as.Date("2016-05-25"), y=14, label = "No Data") + #add text to the graphic where data are missing
+  xlab("Time") + #label x axis
+  ylab("Temperature °C") + #label y axis
+  ylim(0,20) + # set y axis scale
+  geom_vline(xintercept = 16899, linetype="dotted", color = "gray", size=1) + #add vertical line
+  geom_vline(xintercept = 16928, linetype="dashed", color = "gray", size=1) + #add vertical line
+  geom_vline(xintercept = 17013, linetype="dotted", color = "gray", size=1) + #add vertical line
   theme_bw() + #Set the background color
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
         axis.line = element_line(color = 'black'), #Set the axes color
@@ -183,179 +211,20 @@ Fig.ICG.Temp <- ggplot(ICG.Temps, aes(x=Date, y=mean)) +
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
         plot.background=element_blank(), #Set the plot background
-        legend.key = element_blank()) + #remove legend background
-  ggtitle("B) Indoor Common Garden") +
+        legend.position = "none") + #remove legend
+  ggtitle("B) Experimental Temperature") + #add a main title
   theme(plot.title = element_text(face = 'bold', 
                                   size = 12, 
-                                  hjust = 0))
-Fig.ICG.Temp
-
-ICG.pH.m <- aggregate(pH.Total ~ Date, data=ICG, mean)
-ICG.pH.se <- aggregate(pH.Total ~ Date, data=ICG, std.error)
-ICG.pH <- cbind(ICG.pH.m, ICG.pH.se$pH.Total)
-colnames(ICG.pH) <- c("Date", "mean", "se")
-
-Fig.ICG.pH <- ggplot(ICG.pH, aes(x=Date, y=mean)) + 
-  geom_errorbar(aes(ymin=ICG.pH$mean-ICG.pH$se, ymax=ICG.pH$mean+ICG.pH$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
-  geom_line(aes(x=Date, y=mean), size = 0.5, position = position_dodge(width = 0.05)) +   
-  geom_point(aes(x=Date, y=mean), size = 2, position = position_dodge(width = 0.05)) +
-  xlab("Time") +
-  ylab("pH Total Scale") +
-  ylim(6.8, 8.1) +
-  theme_bw() + #Set the background color
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-        axis.line = element_line(color = 'black'), #Set the axes color
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank(), #Set the plot background
-        legend.key = element_blank()) + #remove legend background
-  ggtitle("B) Indoor Common Garden") +
-  theme(plot.title = element_text(face = 'bold', 
-                                  size = 12, 
-                                  hjust = 0))
-Fig.ICG.pH
-
-##### CONTINUOUS TANK TEMPERATURE OUTDOOR COMMON GARDEN #####
-#Hobo_Temperature_Juvenile_Geoduck_OCG.csv
-OCG.Temp <- read.csv("Hobo_Temperature_Juvenile_Geoduck_OCG.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-OCG.Temp$Date.Time <-as.POSIXct(OCG.Temp$Date.Time, format="%m/%d/%y %H:%M")
-OCG.Temp$Date <- as.Date(OCG.Temp$Date.Time) 
-OCG.Temp$Time <- format(as.POSIXct(OCG.Temp$Date.Time) ,format = "%H:%M:%S") 
-
-OCG.Temps.m <- aggregate(Temp.C ~ Date*Treatment, data=OCG.Temp, mean)
-OCG.Temps.se <- aggregate(Temp.C ~  Date*Treatment, data=OCG.Temp, std.error)
-OCG.Temps <- cbind(OCG.Temps.m, OCG.Temps.se$Temp.C)
-colnames(OCG.Temps) <- c("Date", "Treatment", "mean", "se")
-
-Fig.OCG.Temp <- ggplot(OCG.Temps, aes(x=Date, y=mean), group=Treatment) + 
-  geom_errorbar(aes(ymin=OCG.Temps$mean-OCG.Temps$se, ymax=OCG.Temps$mean+OCG.Temps$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
-  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
-  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
-  xlab("Time") +
-  ylab("Temperature °C") +
-  ylim(10, 20) +
-  theme_bw() + #Set the background color
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-        axis.line = element_line(color = 'black'), #Set the axes color
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank(), #Set the plot background
-        legend.position = "none") + #remove legend background
-  ggtitle("B) Indoor Common Garden") +
-  theme(plot.title = element_text(face = 'bold', 
-                                  size = 12, 
-                                  hjust = 0))
-Fig.OCG.Temp
-
-#Blank plot for plotting grid
-Fig.OCG.pH <- ggplot(OCG.Temps, aes(x=Date, y=mean), group=Treatment) + #blank plot for plotting grid
-  geom_blank() +
-  xlab("Time") +
-  ylab("pH Total Scale") +
-  ylim(6.8, 8.0) +
-  theme_bw() + #Set the background color
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-        axis.line = element_line(color = 'black'), #Set the axes color
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank(), #Set the plot background
-        legend.position = "none") + #Removes the legend
-  ggtitle("C) Outdoor Common Garden") +
-  theme(plot.title = element_text(face = 'bold', 
-                                  size = 12, 
-                                  hjust = 0))
-Fig.OCG.pH
-
-##### CONTINUOUS WATERBATH TEMPERATURE AND PH HEADER TANK EXPOSURE 2 #####
-#Avtech_data_Juvenile_Geoduck_Exp2.csv
-#Exposure 2 Waterbath pH
-Exp2.data <- read.csv("Avtech_data_Juvenile_Geoduck_Exp2.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-Exp2.data$Date.Time <-as.POSIXct(Exp2.data$Date.Time, format="%m/%d/%y %H:%M")
-Exp2.data$Date <- as.Date(Exp2.data $Date.Time) #already got this one from the answers above
-Exp2.data$Time <- format(as.POSIXct(Exp2.data $Date.Time) ,format = "%H:%M:%S") 
-
-E2.pH.low.m <- aggregate(pH.Low ~ Date, data = Exp2.data, mean)
-E2.pH.low.se <- aggregate(pH.Low ~ Date, data = Exp2.data, std.error)
-E2.pH.amb.m <- aggregate(pH.Ambient ~ Date, data = Exp2.data, mean)
-E2.pH.amb.se <- aggregate(pH.Ambient ~ Date, data = Exp2.data, std.error)
-E2.pH.low <- cbind(E2.pH.low.m, E2.pH.low.se$pH.Low)
-E2.pH.low$Treatment <- "Low"
-colnames(E2.pH.low) <- c("Date", "mean", "se", "Treatment")
-E2.pH.amb <- cbind(E2.pH.amb.m, E2.pH.amb.se$pH.Ambient)
-E2.pH.amb$Treatment <- "Ambient"
-colnames(E2.pH.amb) <- c("Date", "mean", "se", "Treatment")
-E2.daily.pH <- rbind(E2.pH.low, E2.pH.amb)
-E2.daily.pH
-
-Fig.E2.daily.pH <- ggplot(E2.daily.pH, aes(x=Date, y=mean, group=Treatment)) + 
-  geom_errorbar(aes(ymin=E2.daily.pH$mean-E2.daily.pH$se, ymax=E2.daily.pH$mean+E2.daily.pH$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
-  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
-  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
-  xlab("Time") +
-  ylab("pH Total Scale") +
-  ylim(6.8,8.1) +
-  theme_bw() + #Set the background color
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-        axis.line = element_line(color = 'black'), #Set the axes color
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank(), #Set the plot background
-        legend.position="none") +
-  ggtitle("D) Exposure 2") +
-  theme(plot.title = element_text(face = 'bold', 
-                                  size = 12, 
-                                  hjust = 0))
-Fig.E2.daily.pH
-
-#Exposure 2 Waterbath Temperatures
-E2.Temp.low.m <- aggregate(Temp.Low ~ Date, data = Exp2.data, mean)
-E2.Temp.low.se <- aggregate(Temp.Low ~ Date, data = Exp2.data, std.error)
-E2.Temp.amb.m <- aggregate(Temp.Ambient ~ Date, data = Exp2.data, mean)
-E2.Temp.amb.se <- aggregate(Temp.Ambient ~ Date, data = Exp2.data, std.error)
-E2.Temp.low <- cbind(E2.Temp.low.m, E2.Temp.low.se$Temp.Low)
-E2.Temp.low$Treatment <- "Low"
-colnames(E2.Temp.low) <- c("Date", "mean", "se", "Treatment")
-E2.Temp.amb <- cbind(E2.Temp.amb.m, E2.Temp.amb.se$Temp.Ambient)
-E2.Temp.amb$Treatment <- "Ambient"
-colnames(E2.Temp.amb) <- c("Date", "mean", "se", "Treatment")
-E2.daily.Temp <- rbind(E2.Temp.low, E2.Temp.amb)
-E2.daily.Temp
-
-Fig.E2.daily.Temp <- ggplot(E2.daily.Temp, aes(x=Date, y=mean, group=Treatment)) + 
-  geom_errorbar(aes(ymin=E2.daily.Temp$mean-E2.daily.Temp$se, ymax=E2.daily.Temp$mean+E2.daily.Temp$se), colour="black", width=.1, position = position_dodge(width = 0.05)) +
-  geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
-  geom_point(aes(shape=Treatment), size = 2, position = position_dodge(width = 0.05)) +
-  xlab("Time") +
-  ylab("Temperature °C") +
-  ylim(10,20) +
-  theme_bw() + #Set the background color
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-        axis.line = element_line(color = 'black'), #Set the axes color
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank(), #Set the plot background
-        legend.position="none") +
-  ggtitle("D) Exposure 2") +
-  theme(plot.title = element_text(face = 'bold', 
-                                  size = 12, 
-                                  hjust = 0))
-Fig.E2.daily.Temp
+                                  hjust = 0)) #set title attributes
+All.temp #view plot
 
 ##### SEAWATER CHEMISTRY ANALYSIS FOR DISCRETE MEASUREMENTS #####
 
-##### pH Tris Calibration Curves
+#pH Tris Calibration Curves
 #Data to calculate conversion equations from mV to total scale using tris standard for pH probe
-path <-("/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalysis/Data/pH_Calibration_Files/")
-
-#list all the file names in the folder to get only get the csv files
-file.names<-list.files(path = path, pattern = "csv$")
-
-pH.cals <- data.frame(matrix(NA, nrow=length(file.names), ncol=4, dimnames=list(file.names,c("Date", "Intercept", "Slope","R2")))) #generate a 3 column dataframe with specific column names
+path <-("/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_OA/RAnalysis/Data/pH_Calibration_Files/") #set path to calibration file folder
+file.names<-list.files(path = path, pattern = "csv$") #list all the file names with csv 
+pH.cals <- data.frame(matrix(NA, nrow=length(file.names), ncol=4, dimnames=list(file.names,c("Date", "Intercept", "Slope","R2")))) #generate an empty 3 column dataframe with specific column names
 
 for(i in 1:length(file.names)) { # for every file in list start at the first and run this following function
   Calib.Data <-read.table(file.path(path,file.names[i]), header=TRUE, sep=",", na.string="NA", as.is=TRUE) #reads in the data files
@@ -367,114 +236,110 @@ for(i in 1:length(file.names)) { # for every file in list start at the first and
   pH.cals[i,1] <- substr(file.names[i],1,8) #stores the file name in the Date column
 }
 
-colnames(pH.cals) <- c("Calib.Date",  "Intercept",  "Slope", "R2")
-pH.cals
+colnames(pH.cals) <- c("Calib.Date",  "Intercept",  "Slope", "R2") #names the columns of the dataframe
+pH.cals #view data
 
-# read in total alkalinity, temperature, and salinity
+#Prepare input file for seacarb
 SW.chem <- read.csv("SW_Chem_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-
-#merge with Seawater chemistry file
-SW.chem <- merge(pH.cals, SW.chem, by="Calib.Date")
-
-#constants for use in pH calculation 
+SW.chem <- merge(pH.cals, SW.chem, by="Calib.Date") #merge pH calibrations with Seawater chemistry data
 R <- 8.31447215 #gas constant in J mol-1 K-1 
 F <-96485.339924 #Faraday constant in coulombs mol-1
-
 mvTris <- SW.chem$Temperature*SW.chem$Slope+SW.chem$Intercept #calculate the mV of the tris standard using the temperature mv relationships in the measured standard curves 
-STris<-27.5 #salinity of the Tris from local batch made for Manchester WA salinity conditions in Spring 2016. Batch date = 
+STris<-27.5 #salinity of the Tris from local batch made for Manchester WA salinity conditions in Spring 2016. Batch date = 20160214
 phTris<- (11911.08-18.2499*STris-0.039336*STris^2)*(1/(SW.chem$Temperature+273.15))-366.27059+ 0.53993607*STris+0.00016329*STris^2+(64.52243-0.084041*STris)*log(SW.chem$Temperature+273.15)-0.11149858*(SW.chem$Temperature+273.15) #calculate the pH of the tris (Dickson A. G., Sabine C. L. and Christian J. R., SOP 6a)
 SW.chem$pH.Total<-phTris+(mvTris/1000-SW.chem$pH.MV/1000)/(R*(SW.chem$Temperature+273.15)*log(10)/F) #calculate the pH on the total scale (Dickson A. G., Sabine C. L. and Christian J. R., SOP 6a)
-SW.chem <- na.omit(SW.chem)
-
-##### SEACARB CALCULATIONS #####
+SW.chem <- na.omit(SW.chem) #remove NAs
 
 #Calculate CO2 parameters using seacarb
 carb.output <- carb(flag=8, var1=SW.chem$pH.Total, var2=SW.chem$TA/1000000, S= SW.chem$Salinity, T=SW.chem$Temperature, P=0, Pt=0, Sit=0, pHscale="T", kf="pf", k1k2="l", ks="d") #calculate seawater chemistry parameters using seacarb
-
 carb.output$ALK <- carb.output$ALK*1000000 #convert to µmol kg-1
 carb.output$CO2 <- carb.output$CO2*1000000 #convert to µmol kg-1
 carb.output$HCO3 <- carb.output$HCO3*1000000 #convert to µmol kg-1
 carb.output$CO3 <- carb.output$CO3*1000000 #convert to µmol kg-1
 carb.output$DIC <- carb.output$DIC*1000000 #convert to µmol kg-1
-
 carb.output <- cbind(SW.chem$Measure.Date,  SW.chem$Exposure, SW.chem$Tank,  SW.chem$Treatment, carb.output) #combine the sample information with the seacarb output
 colnames(carb.output) <- c("Date", "Exposure", "Tank",  "Treatment",	"flag",	"Salinity",	"Temperature",	"Pressure",	"pH",	"CO2",	"pCO2",	"fCO2",	"HCO3",	"CO3",	"DIC", "TA",	"Aragonite.Sat", 	"Calcite.Sat") #Rename columns to describe contents
 carb.output <- subset(carb.output, select= c("Exposure","Date",  "Tank",  "Treatment",	"Salinity",	"Temperature",		"pH",	"CO2",	"pCO2",	"HCO3",	"CO3",	"DIC", "TA",	"Aragonite.Sat"))
 
-##### SEAWATER CHEMISTRY DESCRIPTIVE STATISTICS EXPOSURE 1 AND 2 #####
-
+#Calculate descriptive stats for seawater chemistry by Exposure
 ccarb <- melt(carb.output[,c(1,3,4,5:14)], id.vars=c("Exposure", "Treatment", "Tank")) #reshape data into long format
-
-#Calculate descriptive stats by Tank
 Exp1 <-subset(ccarb, Exposure == "Exposure1") #separate out exposure 1 for all data
 Exp2 <-subset(ccarb, Exposure == "Exposure2") #separate out exposure 2 for all data
 
-SWC.Tanks <- ddply(ccarb, c("Exposure", "Tank", "variable"), summarise,
+SWC.Tanks <- ddply(ccarb, c("Exposure", "Tank", "variable"), summarise, #apply functions to sewater chem data
       N = length(na.omit(value)), #count the sample size removing NA
       mean = mean(value), #calculate average 
       sem = sd(value)/sqrt(N)) #calcualte the standard error of the mean
 
-#Test for tank and treatment differneces in Temperature and Total Alkalinity in Exposure 1
+#Test for tank and treatment differences in Temperature and Total Alkalinity in Exposure 1
 Exp1.Temp <-subset(Exp1, variable=="Temperature") #separate out exposure 1 for all data
-temp1.tank <- aov(value ~Tank, data=Exp1.Temp)
-anova(temp1.tank)
-par(mfrow=c(3,3))
-hist(temp1.tank$residuals)
-boxplot(temp1.tank$residuals)
-plot(temp1.tank)
+temp1.tank <- aov(value ~Tank, data=Exp1.Temp) #test the hypothesis there is no difference in temperature between tanks
+temp1.tank.res <-anova(temp1.tank) #view results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(temp1.tank$residuals) #plot histogram of residuals
+boxplot(temp1.tank$residuals) #plot boxplot of residuals
+plot(temp1.tank) #display residuals versus fitter, normal QQ plot, leverage plot
 
-temp1.trt <- aov(value ~Treatment, data=Exp1.Temp)
-anova(temp1.trt)
-par(mfrow=c(3,3))
-hist(temp1.trt$residuals)
-boxplot(temp1.trt$residuals)
-plot(temp1.trt)
+temp1.trt <- aov(value ~Treatment, data=Exp1.Temp) #test the hypothesis there is no difference in temperature between treatments
+temp1.trt.res <- anova(temp1.trt) #statistical results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(temp1.trt$residuals) #plot histogram of residuals
+boxplot(temp1.trt$residuals) #plot boxplot of residuals
+plot(temp1.trt) #display residuals versus fitter, normal QQ plot, leverage plot
 
 Exp1.TA <-subset(Exp1, variable=="TA") #separate out exposure 1 for all data
-TA1.tank <- aov(value ~Tank, data=Exp1.TA)
-anova(TA1.tank)
-par(mfrow=c(3,3))
-hist(TA1.tank$residuals)
-boxplot(TA1.tank$residuals)
-plot(TA1.tank)
+TA1.tank <- aov(value ~Tank, data=Exp1.TA) #test the hypothesis there is no difference in total alkalinity between tanks
+TA1.tank.res <- anova(temp1.trt) #statistical results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(TA1.tank$residuals) #plot histogram of residuals
+boxplot(TA1.tank$residuals) #plot boxplot of residuals
+plot(TA1.tank) #display residuals versus fitter, normal QQ plot, leverage plot
 
-TA1.trt <- aov(value ~Treatment, data=Exp1.TA)
-anova(TA1.trt)
-par(mfrow=c(3,3))
-hist(TA1.trt$residuals)
-boxplot(TA1.trt$residuals)
-plot(TA1.trt)
+TA1.trt <- aov(value ~Treatment, data=Exp1.TA) #test the hypothesis there is no difference in total alkalinity between treatments
+TA1.trt.res <- anova(temp1.trt) #statistical results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(TA1.trt$residuals) #plot histogram of residuals
+boxplot(TA1.trt$residuals) #plot boxplot of residuals
+plot(TA1.trt) #display residuals versus fitter, normal QQ plot, leverage plot
 
-#Test for tank and treatment differneces in Temperature and Total Alkalinity in Exposure 2
+#Test for tank and treatment differences in Temperature and Total Alkalinity in Exposure 2
 Exp2.Temp <-subset(Exp2, variable=="Temperature") #separate out exposure 2 for all data
-temp2.tank <- aov(value ~Tank, data=Exp2.Temp)
-anova(temp2.tank)
-par(mfrow=c(3,3))
-hist(temp2.tank$residuals)
-boxplot(temp2.tank$residuals)
-plot(temp2.tank)
+temp2.tank <- aov(value ~Tank, data=Exp2.Temp) #test the hypothesis there is no difference in temperature between tanks
+temp2.tank.res <-anova(temp2.tank) #view results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(temp2.tank$residuals) #plot histogram of residuals
+boxplot(temp2.tank$residuals) #plot boxplot of residuals
+plot(temp2.tank) #display residuals versus fitter, normal QQ plot, leverage plot
 
-temp2.trt <- aov(value ~Treatment, data=Exp2.Temp)
-anova(temp2.trt)
-par(mfrow=c(3,3))
-hist(temp2.trt$residuals)
-boxplot(temp2.trt$residuals)
-plot(temp2.trt)
+temp2.trt <- aov(value ~Treatment, data=Exp2.Temp) #test the hypothesis there is no difference in temperature between treatments
+temp2.trt.res <- anova(temp2.trt) #statistical results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(temp2.trt$residuals) #plot histogram of residuals
+boxplot(temp2.trt$residuals) #plot boxplot of residuals
+plot(temp2.trt) #display residuals versus fitter, normal QQ plot, leverage plot
 
 Exp2.TA <-subset(Exp2, variable=="TA") #separate out exposure 2 for all data
-TA2.tank <- aov(value ~Tank, data=Exp2.TA)
-anova(TA2.tank)
-par(mfrow=c(3,3))
-hist(TA2.tank$residuals)
-boxplot(TA2.tank$residuals)
-plot(TA2.tank)
+TA2.tank <- aov(value ~Tank, data=Exp2.TA) #test the hypothesis there is no difference in total alkalinity between tanks
+TA2.tank.res <- anova(temp2.trt) #statistical results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(TA2.tank$residuals) #plot histogram of residuals
+boxplot(TA2.tank$residuals) #plot boxplot of residuals
+plot(TA2.tank) #display residuals versus fitter, normal QQ plot, leverage plot
 
-TA2.trt <- aov(value ~Treatment, data=Exp2.TA)
-anova(TA2.trt)
-par(mfrow=c(3,3))
-hist(TA2.trt$residuals)
-boxplot(TA2.trt$residuals)
-plot(TA2.trt)
+TA2.trt <- aov(value ~Treatment, data=Exp2.TA) #test the hypothesis there is no difference in total alkalinity between treatments
+TA2.trt.res <- anova(temp2.trt) #statistical results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(TA2.trt$residuals) #plot histogram of residuals
+boxplot(TA2.trt$residuals) #plot boxplot of residuals
+plot(TA2.trt) #display residuals versus fitter, normal QQ plot, leverage plot
 
 #Calculate descriptive stats by Treatment
 SWC.Treatments <- ddply(ccarb, c("Exposure", "Treatment", "variable"), summarise,
@@ -490,88 +355,6 @@ Exposure2.long <- reshape(Exposure2, idvar="Treatment", direction="wide", timeva
 
 write.table (Exposure1.long, file="/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_oa/RAnalysis/Output/Seawater_chemistry_table_Output_Seed_exposure1.csv", sep=",", row.names = FALSE) #save data to output file
 write.table (Exposure2.long, file="/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_oa/RAnalysis/Output/Seawater_chemistry_table_Output_Seed_exposure2.csv", sep=",", row.names = FALSE) #save data to output file
-
-##### ALGAL FEED DENSITY COUNTS EXPOSURE 1 #####
-#Cell_Counts_Juvenile_Geoduck_Exp1.csv
-cells.1 <- read.csv("Cell_Counts_Juvenile_Geoduck_Exp1.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-cells.1$Avg.Cells <- rowMeans(cells.1[,c("Count1",  "Count2")], na.rm = TRUE) #calculate average of counts
-cells.1$cell.num <- cells.1$Avg.Cells/cells.1$Volume.Counted #calculate density
-
-avg.cells.tank.1 <- aggregate(cell.num ~ Tank, data=cells.1, mean)
-se.cells.tank.1 <- aggregate(cell.num ~ Tank, data=cells.1, std.error)
-avg.cells.trt.1 <- aggregate(cell.num ~ Treatment, data=cells.1, mean)
-se.cells.trt.1 <- aggregate(cell.num ~ Treatment, data=cells.1, std.error)
-Cell.Counts.1 <- cbind(avg.cells.tank.1, se.cells.tank.1$cell.num, avg.cells.trt.1$cell.num, se.cells.trt.1$cell.num)
-colnames(Cell.Counts.1) <- c("Tank", "tank.avg", "tank.se", "trt.avg", "trt.se")
-
-Fig.Exp1.cells <- ggplot(Cell.Counts.1, aes(x=Tank, y=tank.avg)) + 
-  geom_errorbar(aes(ymin=Cell.Counts.1$tank.avg-Cell.Counts.1$tank.se, ymax=Cell.Counts.1$tank.avg+Cell.Counts.1$tank.se), colour="black", width=.1, position = position_dodge(width = 0.6)) +
-  #geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
-  geom_point(aes(), size = 3, position = position_dodge(width = 0.6)) +
-  xlab("Tanks") +
-  ylab("cells per ml") +
-  theme_bw() + #Set the background color
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-        axis.line = element_line(color = 'black'), #Set the axes color
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) 
-Fig.Exp1.cells
-
-cells1.tank <- aov(cell.num ~Tank, data=cells.1)
-anova(cells1.tank)
-par(mfrow=c(3,2))
-hist(cells1.tank$residuals)
-boxplot(cells1.tank$residuals)
-plot(cells1.tank)
-
-cells1.trt <- aov(cell.num ~Treatment, data=cells.1)
-anova(cells1.trt)
-par(mfrow=c(3,2))
-hist(cells1.trt$residuals)
-boxplot(cells1.trt$residuals)
-plot(cells1.trt)
-
-##### ALGAL FEED DENSITY COUNTS EXPOSURE 2 #####
-#Cell_Counts_Juvenile_Geoduck_Exp2.csv
-cells.2 <- read.csv("Cell_Counts_Juvenile_Geoduck_Exp2.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
-cells.2$cell.num <- rowMeans(cells.2[,c("Count1",  "Count2", "Count3")], na.rm = TRUE) #calculate average of counts
-avg.cells.tank <- aggregate(cell.num ~ Tank, data=cells.2, mean)
-se.cells.tank <- aggregate(cell.num ~ Tank, data=cells.2, std.error)
-avg.cells.trt <- aggregate(cell.num ~ Treatment, data=cells.2, mean)
-se.cells.trt <- aggregate(cell.num ~ Treatment, data=cells.2, std.error)
-Cell.Counts <- cbind(avg.cells.tank, se.cells.tank$cell.num, avg.cells.trt$cell.num, se.cells.trt$cell.num)
-colnames(Cell.Counts) <- c("Tank", "tank.avg", "tank.se", "trt.avg", "trt.se")
-
-Fig.Exp2.cells <- ggplot(Cell.Counts, aes(x=Tank, y=tank.avg)) + 
-  geom_errorbar(aes(ymin=Cell.Counts$tank.avg-Cell.Counts$tank.se, ymax=Cell.Counts$tank.avg+Cell.Counts$tank.se), colour="black", width=.1, position = position_dodge(width = 0.6)) +
-  #geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
-  geom_point(aes(), size = 3, position = position_dodge(width = 0.6)) +
-  xlab("Tanks") +
-  ylab("cells per ml") +
-  theme_bw() + #Set the background color
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-        axis.line = element_line(color = 'black'), #Set the axes color
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) 
-Fig.Exp2.cells
-
-cells2.tank <- aov(cell.num ~Tank, data=cells.2)
-anova(cells2.tank)
-par(mfrow=c(3,2))
-hist(cells2.tank$residuals)
-boxplot(cells2.tank$residuals)
-plot(cells2.tank)
-
-cells2.trt <- aov(cell.num ~Treatment, data=cells.2)
-anova(cells2.trt)
-par(mfrow=c(3,2))
-hist(cells2.trt$residuals)
-boxplot(cells2.trt$residuals)
-plot(cells2.trt)
 
 ##### JUVENILE GEODUCK SHELL SIZE #####
 
@@ -867,19 +650,21 @@ colnames(All) <- c("Day",  "Treatment",	"Secondary",	"mean", "se")
 #                                   hjust = 0))
 # Fig.Time
 
-
 ##### CAPTURE STATISTICAL OUTPUT AND FIGURES TO FILE #####
 setwd(file.path(mainDir, 'Output'))
+
+capture.output(Flow1.Rate, FL1.res, Flow2.Rate, FL2.res, temp1.tank.res, temp1.trt.res, 
+               TA1.tank.res, TA1.trt.res, temp2.tank.res, temp2.trt.res, 
+               TA2.tank.res, TA2.trt.res, cells1.tank.res, cells1.trt.res,
+               cells2.tank.res, cells2.trt.res,
+               file="Geoduck_Juvenile_Descriptive_Statistics.txt")
 capture.output(Init.res, CG.res, Rexp.res, file="Geoduck_Juvenile_Statistical_Results.txt")
 
 #Capture Figures to File
 Figure1.Size <- arrangeGrob(Fig.Exp1.size,Fig.CG.size, Fig.Exp2.D10.size, Fig.Exp2.D23.size, ncol=2)
 ggsave(file="Geoduck_Size.pdf", Figure1.Size, width = 6.5, height = 8, units = c("in"))
 
-FigureS1 <- arrangeGrob(Fig.E1.daily.pH, Fig.ICG.pH, Fig.OCG.pH, Fig.E2.daily.pH, ncol=4)
-ggsave(file="Fig.S1.pH.pdf", FigureS1, width = 11, height = 4, units = c("in"))
-
-FigureS2 <- arrangeGrob( Fig.E1.daily.Temp, Fig.ICG.Temp, Fig.OCG.Temp, Fig.E2.daily.Temp, ncol=4)
-ggsave(file="Fig.S1.Temp.pdf", FigureS2, width = 11, height = 4, units = c("in"))
+FigureS1 <- arrangeGrob(All.pH, All.temp, ncol=1)
+ggsave(file="Fig.S1.pdf", FigureS1, width = 6, height = 8, units = c("in"))
 
 setwd(file.path(mainDir, 'Data'))
