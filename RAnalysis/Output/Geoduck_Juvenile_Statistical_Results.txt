@@ -1,13 +1,27 @@
 Analysis of Variance Table
 
 Response: log10(A.rel)
-              Df  Sum Sq Mean Sq F value    Pr(>F)    
-Treatment      2 0.30510 0.15255  11.512 3.197e-05 ***
-Day            1 0.35501 0.35501  26.791 1.190e-06 ***
-Treatment:Day  2 0.03138 0.01569   1.184    0.3103    
-Residuals     99 1.31185 0.01325                      
+              Df  Sum Sq  Mean Sq F value    Pr(>F)    
+Treatment      2 0.30510 0.152551 12.4359 1.575e-05 ***
+Day            2 0.44656 0.223281 18.2019 1.985e-07 ***
+Treatment:Day  4 0.07406 0.018514  1.5093    0.2056    
+Residuals     96 1.17763 0.012267                      
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+ Treatment Day         lsmean         SE df    lower.CL    upper.CL .group
+ Low       Day10 -0.122946883 0.02768906 96 -0.17790923 -0.06798454  a    
+ Low       Day1  -0.008293978 0.05537811 96 -0.11821867  0.10163071  abc  
+ Medium    Day1  -0.006823384 0.05537811 96 -0.11674807  0.10310130  abc  
+ Ambient   Day10 -0.006089826 0.02768906 96 -0.06105217  0.04887252  ab   
+ Ambient   Day1  -0.005328812 0.05537811 96 -0.11525350  0.10459588  abc  
+ Low       Day23  0.022212410 0.02768906 96 -0.03274993  0.07717475   b   
+ Medium    Day10  0.035141241 0.02768906 96 -0.01982110  0.09010358   b   
+ Medium    Day23  0.116813023 0.03071825 96  0.05583778  0.17778827   bc  
+ Ambient   Day23  0.170338677 0.02768906 96  0.11537633  0.22530102    c  
+
+Confidence level used: 0.95 
+P value adjustment: tukey method for comparing a family of 9 estimates 
+significance level used: alpha = 0.05 
 Analysis of Variance Table
 
 Response: log10(A.rel)
@@ -18,11 +32,22 @@ Treatment:Day   2 0.01701 0.00850  0.8692    0.4211
 Residuals     177 1.73200 0.00979                      
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+ Treatment Day       lsmean         SE  df  lower.CL  upper.CL .group
+ Ambient   Day51  0.2648601 0.02473021 177 0.2160560 0.3136641  a    
+ Low       Day51  0.3461885 0.02473021 177 0.2973845 0.3949925  ab   
+ Ambient   Day135 0.3623150 0.01869428 177 0.3254226 0.3992074   b   
+ Medium    Day51  0.3633791 0.02473021 177 0.3145750 0.4121831  ab   
+ Low       Day135 0.4913061 0.01346142 177 0.4647405 0.5178716    c  
+ Medium    Day135 0.5103016 0.01358782 177 0.4834866 0.5371166    c  
+
+Confidence level used: 0.95 
+P value adjustment: tukey method for comparing a family of 6 estimates 
+significance level used: alpha = 0.05 
 Analysis of Variance Table
 
-Response: log10(Area)
+Response: log10(A.rel)
                          Df  Sum Sq  Mean Sq F value   Pr(>F)   
-Treatment                 2 0.02750 0.013750  1.4161 0.246590   
+Treatment                 2 0.01420 0.007098  0.7309 0.483536   
 Secondary                 1 0.08010 0.080104  8.2495 0.004802 **
 Day                       1 0.00003 0.000030  0.0031 0.955618   
 Treatment:Secondary       2 0.10549 0.052744  5.4319 0.005488 **
@@ -32,3 +57,20 @@ Treatment:Secondary:Day   2 0.01179 0.005897  0.6073 0.546455
 Residuals               123 1.19434 0.009710                    
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+ Treatment Secondary Day          lsmean         SE  df     lower.CL     upper.CL .group
+ Ambient   Medium    Day158 -0.105931827 0.03483911 123 -0.174893718 -0.036969937  a    
+ Medium    Medium    Day158 -0.077520791 0.02544289 123 -0.127883435 -0.027158147  a    
+ Ambient   Medium    Day145 -0.064968792 0.04022874 123 -0.144599124  0.014661540  ab   
+ Low       Ambient   Day145 -0.052395319 0.02844602 123 -0.108702467  0.003911829  ab   
+ Low       Medium    Day145 -0.045502786 0.02844602 123 -0.101809934  0.010804362  ab   
+ Medium    Ambient   Day145 -0.036933931 0.02844602 123 -0.093241079  0.019373217  ab   
+ Medium    Medium    Day145 -0.035243185 0.02844602 123 -0.091550333  0.021063963  ab   
+ Low       Medium    Day158 -0.034929792 0.02463497 123 -0.083693212  0.013833629  ab   
+ Low       Ambient   Day158 -0.029397028 0.02633589 123 -0.081527317  0.022733261  ab   
+ Medium    Ambient   Day158  0.006364853 0.02633589 123 -0.045765436  0.058495142  ab   
+ Ambient   Ambient   Day158  0.045506003 0.03483911 123 -0.023455888  0.114467893  ab   
+ Ambient   Ambient   Day145  0.084305463 0.04022874 123  0.004675131  0.163935795   b   
+
+Confidence level used: 0.95 
+P value adjustment: tukey method for comparing a family of 12 estimates 
+significance level used: alpha = 0.05 

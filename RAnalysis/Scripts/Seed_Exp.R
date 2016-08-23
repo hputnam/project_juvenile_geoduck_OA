@@ -16,6 +16,8 @@ library(plotrix)
 library(ggplot2) 
 library(plyr)
 library(gridExtra)
+library(multcompView)
+library(lsmeans)
 
 #Required Data files
 #Flow_Juvenile_Geoduck.csv
@@ -96,20 +98,6 @@ avg.cells.tank.2 <- do.call(data.frame,aggregate(cell.num ~ Tank, data = cells.2
 avg.cells.trt.2 <- do.call(data.frame,aggregate(cell.num ~ Treatment, data = cells.2, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem of each Treatment
 colnames(avg.cells.tank.2) <- c("Tank", "mean", "se") #rename columns 
 colnames(avg.cells.trt.2) <- c("Treatment", "mean", "se") #rename columns 
-
-Fig.Exp2.cells <- ggplot(avg.cells.tank.2, aes(x=Tank, y=mean)) + 
-  geom_errorbar(aes(ymin=avg.cells.tank.2$mean-avg.cells.tank.2$se, ymax=avg.cells.tank.2$mean+avg.cells.tank.2$se), colour="black", width=.1, position = position_dodge(width = 0.6)) +  
-  geom_point(aes(), size = 3, position = position_dodge(width = 0.6)) +
-  xlab("Tanks") +
-  ylab("cells per ml") +
-  theme_bw() + #Set the background color
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-        axis.line = element_line(color = 'black'), #Set the axes color
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background=element_blank()) 
-Fig.Exp2.cells
 
 cells2.tank <- aov(cell.num ~Tank, data=cells.2) #test the hypothesis feeding does not differ between tanks
 cells2.tank.res <-anova(cells2.tank) #display anova results
@@ -349,10 +337,8 @@ SWC.Treatments <- ddply(ccarb, c("Exposure", "Treatment", "variable"), summarise
 
 Exposure1 <-subset(SWC.Treatments, Exposure == "Exposure1") #separate out exposure 1
 Exposure2 <-subset(SWC.Treatments, Exposure == "Exposure2") #separate out exposure 2
-
 Exposure1.long <- reshape(Exposure1, idvar="Treatment", direction="wide", timevar = "variable", drop = c("Exposure", "N")) #reshape data format for table layout
 Exposure2.long <- reshape(Exposure2, idvar="Treatment", direction="wide", timevar = "variable", drop = c("Exposure", "N")) #reshape data format for table layout
-
 write.table (Exposure1.long, file="/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_oa/RAnalysis/Output/Seawater_chemistry_table_Output_Seed_exposure1.csv", sep=",", row.names = FALSE) #save data to output file
 write.table (Exposure2.long, file="/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_oa/RAnalysis/Output/Seawater_chemistry_table_Output_Seed_exposure2.csv", sep=",", row.names = FALSE) #save data to output file
 
@@ -360,160 +346,61 @@ write.table (Exposure2.long, file="/Users/hputnam/MyProjects/Geoduck_Epi/project
 
 seed.size <- read.csv("Size_Juvenile_Geoduck.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
 
-Initial <- subset(seed.size, Timepoint=="Initial", select = Date:Area)
-Initial <- subset(seed.size, Component=="Exp1", select = Date:Area)
-Initial$Ratio <- Initial$Length/Initial$Width
+#Exposure 2 Experimental Component
+Initial <- subset(seed.size, Component=="Exp1", select = Date:Area) #subset dataframe to exposure 1 data
+Initial$Ratio <- Initial$Length/Initial$Width #calculate the length:width of the shell
 
-#calculating mean for Exposure 1 normalizations
-T0.norms <- aggregate(Area ~ Day*Treatment, data=Initial, mean)
+#calculating shell area means for Exposure 1 normalizations
+E1.norms <- aggregate(Area ~ Day*Treatment, data=Initial, mean) #calculate mean area by Day and Treatment
+E1.norm.area.amb <- subset(E1.norms, Day=="Day1" & Treatment=="Ambient", select = Area) #subset mean area for day 1 ambient condition
+E1.norm.area.med <- subset(E1.norms, Day=="Day1" & Treatment=="Medium", select = Area) #subset mean area for day 1 medium condition
+E1.norm.area.low <- subset(E1.norms, Day=="Day1" & Treatment=="Low", select = Area) #subset mean area for day 1 low condition
 
-T0.norm.area.amb <- subset(T0.norms, Day=="1" & Treatment=="Ambient", select = Area)
-T0.norm.area.med <- subset(T0.norms, Day=="1" & Treatment=="Medium", select = Area)
-T0.norm.area.high <- subset(T0.norms, Day=="1" & Treatment=="High", select = Area)
-
-T0.norms <- function(x) { 
-  if(x == "Ambient") y <- T0.norm.area.amb
-  if(x == "Medium") y <- T0.norm.area.med
-  if(x == "High") y <- T0.norm.area.high
-  return(y)
+E1.norms <- function(x) {  #write function
+  if(x == "Ambient") y <- E1.norm.area.amb #if Treatment equals Ambient assign day 1 Ambient mean as normalization factor
+  if(x == "Medium") y <- E1.norm.area.med #if Treatment equals Medium assign day 1 Medium mean as normalization factor
+  if(x == "Low") y <- E1.norm.area.low #if Treatment equals Low assign day 1 Low mean as normalization factor
+  return(y) #return result
 }
 
-Initial$A.norm <- as.numeric(sapply(Initial$Treatment,T0.norms))
-Initial$A.rel <- Initial$Area/Initial$A.norm
-Init.avg.area <- aggregate(Area ~ Day*Treatment, data=Initial, mean)
-Init.se.area <- aggregate(Area ~ Day*Treatment, data=Initial, std.error)
-Init.avg.Len <- aggregate(Length ~ Day*Treatment, data=Initial, mean)
-Init.se.Len <- aggregate(Length ~ Day*Treatment, data=Initial, std.error)
-Init.avg.Wid <- aggregate(Width ~ Day*Treatment, data=Initial, mean)
-Init.se.Wid <- aggregate(Width ~ Day*Treatment, data=Initial, std.error)
-Init.avg.Ratio <- aggregate(Ratio ~ Day*Treatment, data=Initial, mean)
-Init.se.Ratio<- aggregate(Ratio ~ Day*Treatment, data=Initial, std.error)
-Init.avg.ARel <- aggregate(A.rel ~ Day*Treatment, data=Initial, mean)
-Init.se.ARel<- aggregate(A.rel ~ Day*Treatment, data=Initial, std.error)
-Init.Shell.size <- cbind(Init.avg.area, Init.se.area$Area, Init.avg.Len$Length, Init.se.Len$Length, Init.avg.Wid$Width, Init.se.Wid$Width,Init.avg.Ratio$Ratio, Init.se.Ratio$Ratio, Init.avg.ARel$A.rel, Init.se.ARel$A.rel)
-colnames(Init.Shell.size) <- c("Day", "Treatment", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel")
-
-#calculating mean for Common Garden normalizations
-E1.norm.area.amb <- subset(Init.Shell.size, Day=="23" & Treatment=="Ambient", select = avg.area)
-E1.norm.area.med <- subset(Init.Shell.size, Day=="23" & Treatment=="Medium", select = avg.area)
-E1.norm.area.high <- subset(Init.Shell.size, Day=="23" & Treatment=="High", select = avg.area)
-
-CG <- subset(seed.size, Component=="Common.Garden", select = Date:Area)
-CG$Ratio <- CG$Length/CG$Width
-#ifelse(CG$Treatment == "Medium", CG$A.norm <- E1.norm.area.amb, NA)
-
-E1.norms <- function(x) { 
-  if(x == "Ambient") y <- E1.norm.area.amb
-  if(x == "Medium") y <- E1.norm.area.med
-  if(x == "High") y <- E1.norm.area.high
-  return(y)
-}
-
-CG$A.norm <- as.numeric(sapply(CG$Treatment,E1.norms))
-CG$A.rel <- CG$Area/CG$A.norm
-CG.avg.area <- aggregate(Area ~ Day*Treatment, data=CG, mean)
-CG.se.area <- aggregate(Area ~ Day*Treatment, data=CG, std.error)
-CG.avg.Len <- aggregate(Length ~ Day*Treatment, data=CG, mean)
-CG.se.Len <- aggregate(Length ~ Day*Treatment, data=CG, std.error)
-CG.avg.Wid <- aggregate(Width ~ Day*Treatment, data=CG, mean)
-CG.se.Wid <- aggregate(Width ~ Day*Treatment, data=CG, std.error)
-CG.avg.Ratio <- aggregate(Ratio ~ Day*Treatment, data=CG, mean)
-CG.se.Ratio<- aggregate(Ratio ~ Day*Treatment, data=CG, std.error)
-CG.avg.ARel <- aggregate(A.rel ~ Day*Treatment, data=CG, mean)
-CG.se.ARel<- aggregate(A.rel ~ Day*Treatment, data=CG, std.error)
-CG.Shell.size <- cbind(CG.avg.area, CG.se.area$Area, CG.avg.Len$Length, CG.se.Len$Length, CG.avg.Wid$Width, CG.se.Wid$Width,CG.avg.Ratio$Ratio, CG.se.Ratio$Ratio, CG.avg.ARel$A.rel, CG.se.ARel$A.rel)
-colnames(CG.Shell.size) <- c("Day", "Treatment", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel")
-
-
-#calculating mean for Exposure 2 normalizations
-norm.area.amb <- subset(CG.Shell.size, Day=="135" & Treatment=="Ambient", select = avg.area)
-norm.area.med <- subset(CG.Shell.size, Day=="135" & Treatment=="Medium", select = avg.area)
-norm.area.high <- subset(CG.Shell.size, Day=="135" & Treatment=="High", select = avg.area)
-
-ReExp <- subset(seed.size, Timepoint=="Reexposure", select = Date:Area)
-ReExp$Ratio <- ReExp$Length/ReExp$Width
-
-norms <- function(x) { 
-  if(x == "Ambient") y <- norm.area.amb
-  if(x == "Medium") y <- norm.area.med
-  if(x == "High") y <- norm.area.high
-  return(y)
-}
-
-ReExp$A.norm <- as.numeric(sapply(ReExp$Treatment,norms))
-ReExp$A.rel <- ReExp$Area/ReExp$A.norm
-ReExp.avg.area <- aggregate(Area ~ Day*Treatment*Secondary, data=ReExp, mean)
-ReExp.se.area <- aggregate(Area ~ Day*Treatment*Secondary, data=ReExp, std.error)
-ReExp.avg.Len <- aggregate(Length ~ Day*Treatment*Secondary, data=ReExp, mean)
-ReExp.se.Len <- aggregate(Length ~ Day*Treatment*Secondary, data=ReExp, std.error)
-ReExp.avg.Wid <- aggregate(Width ~ Day*Treatment*Secondary, data=ReExp, mean)
-ReExp.se.Wid <- aggregate(Width ~ Day*Treatment*Secondary, data=ReExp, std.error)
-ReExp.avg.Ratio <- aggregate(Ratio ~ Day*Treatment*Secondary, data=ReExp, mean)
-ReExp.se.Ratio<- aggregate(Ratio ~ Day*Treatment*Secondary, data=ReExp, std.error)
-ReExp.avg.ARel <- aggregate(A.rel ~ Day*Treatment*Secondary, data=ReExp, mean)
-ReExp.se.ARel<- aggregate(A.rel ~ Day*Treatment*Secondary, data=ReExp, std.error)
-ReExp.Shell.size <- cbind(ReExp.avg.area, ReExp.se.area$Area, ReExp.avg.Len$Length, ReExp.se.Len$Length, ReExp.avg.Wid$Width, ReExp.se.Wid$Width,ReExp.avg.Ratio$Ratio, ReExp.se.Ratio$Ratio, ReExp.avg.ARel$A.rel, ReExp.se.ARel$A.rel)
-colnames(ReExp.Shell.size) <- c("Day", "Treatment", "Secondary", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel")
-ReExp.Shell.size$combos <- c("Ambient-Ambient", "Ambient-Ambient", "High-Ambient","High-Ambient","Medium-Ambient","Medium-Ambient","Ambient-Medium","Ambient-Medium","High-Medium","High-Medium","Medium-Medium","Medium-Medium")
+Initial$A.norm <- as.numeric(sapply(Initial$Treatment,E1.norms)) #add a column with the normalization values 
+Initial$A.rel <- Initial$Area/Initial$A.norm #normalize the area to be relative size
+Init.area <- do.call(data.frame,aggregate(Area ~ Day*Treatment, data = Initial, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+Init.Len <- do.call(data.frame,aggregate(Length ~ Day*Treatment, data = Initial, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+Init.Wid <- do.call(data.frame,aggregate(Width ~ Day*Treatment, data = Initial, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+Init.Ratio <- do.call(data.frame,aggregate(Ratio ~ Day*Treatment, data = Initial, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+Init.ARel <- do.call(data.frame,aggregate(A.rel ~ Day*Treatment, data = Initial, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+Init.Shell.size <- cbind(Init.area, Init.Len$Length.mean, Init.Len$Length.se, Init.Wid$Width.mean, Init.Wid$Width.se, Init.Ratio$Ratio.mean, Init.Ratio$Ratio.se, Init.ARel$A.rel.mean, Init.ARel$A.rel.se) #bind columns into dataframe
+colnames(Init.Shell.size) <- c("Day", "Treatment", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel") #rename columns
 
 # Significance testing for initial exposure
-Init <- aov(log10(A.rel) ~ Treatment*Day, data=Initial)
-Init.res <- anova(Init)
-par(mfrow=c(3,2))
-par(mar=c(1,1,1,1))
-hist(Init$residuals)
-boxplot(Init$residuals)
-plot(Init)
+Init <- aov(log10(A.rel) ~ Treatment*Day, data=Initial) #test the hypothesis relative size does not differ between treatments and time
+Init.res <-anova(Init) #display anova results
+par(mfrow=c(3,2)) #set plotting configuration
+par(mar=c(1,1,1,1)) #set margins for plots
+hist(Init$residuals) #plot histogram of residuals
+boxplot(Init$residuals) #plot boxplot of residuals
+plot(Init) #display residuals versus fitter, normal QQ plot, leverage plot
 
-# Significance testing for common garden
-CG <- aov(log10(A.rel) ~ Treatment*Day, data=CG)
-CG.res <- anova(CG)
-par(mfrow=c(3,2))
-par(mar=c(1,1,1,1))
-hist(CG$residuals)
-boxplot(CG$residuals)
-plot(CG)
+#PostHoc Tukey adjustment comparison of least-squares means
+E1.lsm <- lsmeans(Init, ~ Treatment*Day, adjust="tukey") #compute least-squares means for Treatment*Day from ANOVA model
+E1.pairs <- cld(E1.lsm, alpha=.05, Letters=letters) #list pairwise tests and letter display
+E1.pairs #view results
 
-#posthoc <- TukeyHSD(x=X,conf.level=0.95)
-#posthoc
+#Exposure 1 Plotting
+Init.Shell.size$Day.Num <- c(1,10,23,1,10,23,1,10,23) #set days as numeric for plotting
 
-Day1 <- subset(Initial, Day==1, select = Date:Area)
-Day10 <- subset(Initial, Day==10, select = Date:Area)
-Day23 <- subset(Initial, Day==23, select = Date:Area)
-Day51 <- subset(CG, Day==51, select = Date:Area)
-Day135 <- subset(CG, Day==135, select = Date:Area)
-
-D1 <- aov(Area ~ Treatment, data=Day1)
-anova(D1)
-hist(D1$residuals)
-
-D10 <- aov(Area ~ Treatment, data=Day10)
-anova(D10)
-hist(D10$residuals)
-
-D23 <- aov(Area ~ Treatment, data=Day23)
-anova(D23)
-hist(D23$residuals)
-posthoc.23 <- TukeyHSD(x=D23,conf.level=0.95)
-posthoc.23
-
-D51 <- aov(Area ~ Treatment, data=Day51)
-anova(D51)
-hist(D51$residuals)
-
-D135 <- aov(Area ~ Treatment, data=Day135)
-anova(D135)
-hist(D135$residuals)
-posthoc.135 <- TukeyHSD(x=D135,conf.level=0.95)
-posthoc.135
-
-#rect <- data.frame(xmin=3.1, xmax=Inf, ymin=-Inf, ymax=Inf) #identify background shading placement
-
-Fig.Exp1.size <- ggplot(Init.Shell.size, aes(x=Day, y=avg.Arel, group=Treatment)) + 
+Fig.Exp1.size <- ggplot(Init.Shell.size, aes(x=Day.Num, y=avg.Arel, group=Treatment)) + 
   geom_errorbar(aes(ymin=Init.Shell.size$avg.Arel-Init.Shell.size$se.Arel, ymax=Init.Shell.size$avg.Arel+Init.Shell.size$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.6)) +
   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
   geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.6)) +
   scale_x_continuous(breaks=seq(0,160,10)) +
+  annotate("text", x=9, y=0.73, label = "a", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=1, y=1.2, label = "abc", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=11, y=1, label = "ab", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=c(9,22.5), y=c(1.2,0.95), label = "b", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=22.5, y=1.25, label = "bc", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=22, y=1.6, label = "c", size = 3) + #add text to the graphic for posthoc letters
   xlab("Days") +
   ylab(expression(paste("Relative Size"))) +
   ylim(0.5,3.5) +
@@ -532,12 +419,59 @@ Fig.Exp1.size <- ggplot(Init.Shell.size, aes(x=Day, y=avg.Arel, group=Treatment)
                                   hjust = 0))
 Fig.Exp1.size
 
+#Common Garden Experimental Component
+CG.data <- subset(seed.size, Component=="Common.Garden", select = Date:Area) #subset dataframe to common garden data
+CG.data$Ratio <- CG.data$Length/CG.data$Width #calculate the length:width of the shell
 
-Fig.CG.size <- ggplot(CG.Shell.size, aes(x=Day, y=avg.Arel, group=Treatment)) + 
+#calculating shell area means for Common Garden normalizations
+CG.norm.area.amb <- subset(Init.Shell.size, Day=="Day23" & Treatment=="Ambient", select = avg.area) #subset mean area for day 23 ambient condition
+CG.norm.area.med <- subset(Init.Shell.size, Day=="Day23" & Treatment=="Medium", select = avg.area) #subset mean area for day 23 medium condition
+CG.norm.area.low <- subset(Init.Shell.size, Day=="Day23" & Treatment=="Low", select = avg.area) #subset mean area for day 23 high condition
+
+CG.norms <- function(x) { 
+  if(x == "Ambient") y <- CG.norm.area.amb #if Treatment equals Ambient assign day 23 Ambient mean as normalization factor
+  if(x == "Medium") y <- CG.norm.area.med #if Treatment equals Medium assign day 23 Medium mean as normalization factor
+  if(x == "Low") y <- CG.norm.area.low #if Treatment equals Low assign day 23 Low mean as normalization factor
+  return(y)
+}
+
+CG.data$A.norm <- as.numeric(sapply(CG.data$Treatment,CG.norms)) #add a column with the normalization values
+CG.data$A.rel <- CG.data$Area/CG.data$A.norm #normalize the area to be relative size
+CG.area <- do.call(data.frame,aggregate(Area ~ Day*Treatment, data = CG.data, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+CG.Len <- do.call(data.frame,aggregate(Length ~ Day*Treatment, data = CG.data, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+CG.Wid <- do.call(data.frame,aggregate(Width ~ Day*Treatment, data = CG.data, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+CG.Ratio <- do.call(data.frame,aggregate(Ratio ~ Day*Treatment, data = CG.data, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+CG.ARel <- do.call(data.frame,aggregate(A.rel ~ Day*Treatment, data = CG.data, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+CG.Shell.size <- cbind(CG.area, CG.Len$Length.mean, CG.Len$Length.se, CG.Wid$Width.mean, CG.Wid$Width.se, CG.Ratio$Ratio.mean, CG.Ratio$Ratio.se, CG.ARel$A.rel.mean, CG.ARel$A.rel.se) #bind columns into dataframe
+colnames(CG.Shell.size) <- c("Day", "Treatment", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel") #rename columns
+
+# Significance testing for common garden
+CG <- aov(log10(A.rel) ~ Treatment*Day, data=CG.data)
+CG.res <- anova(CG)
+par(mfrow=c(3,2))
+par(mar=c(1,1,1,1))
+hist(CG$residuals)
+boxplot(CG$residuals)
+plot(CG)
+
+#PostHoc Tukey adjustment comparison of least-squares means
+CG.lsm <- lsmeans(CG, ~ Treatment*Day, adjust="tukey") #compute least-squares means for Treatment*Day from ANOVA model
+CG.pairs <- cld(CG.lsm, alpha=.05, Letters=letters) #list pairwise tests and letter display
+CG.pairs #view results
+
+#Common Garden Plotting
+CG.Shell.size$Day.Num <- c(135,51,135,51,135,51) #set days as numeric for plotting
+
+Fig.CG.size <- ggplot(CG.Shell.size, aes(x=Day.Num, y=avg.Arel, group=Treatment)) + 
   geom_errorbar(aes(ymin=CG.Shell.size$avg.Arel-CG.Shell.size$se.Arel, ymax=CG.Shell.size$avg.Arel+CG.Shell.size$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.6)) +
   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
   geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.6)) +
   scale_x_continuous(breaks=seq(0,160,10)) +
+  annotate("text", x=43, y=1.85, label = "a", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=132, y=2.15, label = "b", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=c(43,43), y=c(2.45,2.2), label = "ab", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=c(141,141), y=c(3.15,3.4), label = "c", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=35, y=0.5, label = ".", size = 1) + #add text to the graphic for posthoc letters
   xlab("Days") +
   ylab(expression(paste("Relative Size"))) +
   ylim(0.5,3.5) +
@@ -555,26 +489,56 @@ Fig.CG.size <- ggplot(CG.Shell.size, aes(x=Day, y=avg.Arel, group=Treatment)) +
                                   hjust = 0))
 Fig.CG.size
 
+#Exposure 2 Experimental Component
+ReExp <- subset(seed.size, Timepoint=="Reexposure", select = Date:Area) #subset dataframe to exposure 2 data
+ReExp$Ratio <- ReExp$Length/ReExp$Width #calculate the length:width of the shell
+
+#calculating mean for Exposure 2 normalizations
+E2.norm.area.amb <- subset(CG.Shell.size, Day=="Day135" & Treatment=="Ambient", select = avg.area) #subset mean area for day 135 ambient condition
+E2.norm.area.med <- subset(CG.Shell.size, Day=="Day135" & Treatment=="Medium", select = avg.area) #subset mean area for day 135 medium condition
+E2.norm.area.low<- subset(CG.Shell.size, Day=="Day135" & Treatment=="Low", select = avg.area) #subset mean area for day 135 low condition
+
+E2.norms <- function(x) { 
+  if(x == "Ambient") y <- E2.norm.area.amb #if Treatment equals Ambient assign day 135 Ambient mean as normalization factor
+  if(x == "Medium") y <- E2.norm.area.med #if Treatment equals Ambient assign day 135 Medium mean as normalization factor
+  if(x == "Low") y <- E2.norm.area.low #if Treatment equals Ambient assign day 135 Low mean as normalization factor
+  return(y)
+}
+
+ReExp$A.norm <- as.numeric(sapply(ReExp$Treatment,E2.norms)) #add a column with the normalization values
+ReExp$A.rel <- ReExp$Area/ReExp$A.norm #normalize the area to be relative size
+ReExp.area <- do.call(data.frame,aggregate(Area ~ Treatment*Secondary*Day, data = ReExp, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+ReExp.Len <- do.call(data.frame,aggregate(Length ~ Treatment*Secondary*Day, data = ReExp, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+ReExp.Wid <- do.call(data.frame,aggregate(Width ~ Treatment*Secondary*Day, data = ReExp, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+ReExp.Ratio <- do.call(data.frame,aggregate(Ratio ~ Treatment*Secondary*Day, data = ReExp, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+ReExp.ARel <- do.call(data.frame,aggregate(A.rel ~ Treatment*Secondary*Day, data = ReExp, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+ReExp.Shell.size <- cbind(ReExp.area, ReExp.Len$Length.mean, ReExp.Len$Length.se, ReExp.Wid$Width.mean, ReExp.Wid$Width.se, ReExp.Ratio$Ratio.mean, ReExp.Ratio$Ratio.se, ReExp.ARel$A.rel.mean, ReExp.ARel$A.rel.se) #bind columns into dataframe
+colnames(ReExp.Shell.size) <- c("Treatment", "Secondary", "Day", "avg.area", "se.area","avg.len", "se.len", "avg.wid", "se.wid","avg.ratio", "se.ratio","avg.Arel", "se.Arel") #rename columns
+
 # Significance testing for secondary exposure
-Rexp <- aov(log10(Area) ~ Treatment*Secondary*Day, data=ReExp)
-Rexp.res <- anova(Rexp)
-#Check Assumptions
+Rexps <- aov(log10(A.rel) ~ Treatment*Secondary*Day, data=ReExp)
+Rexp.res <- anova(Rexps)
 par(mfrow=c(3,2))
 par(mar=c(1,1,1,1))
-hist(Rexp$residuals)
-boxplot(Rexp$residuals)
-plot(Rexp)
+hist(Rexps$residuals)
+boxplot(Rexps$residuals)
+plot(Rexps)
 
-# Rexp.posthoc <- TukeyHSD(x=Rexp,conf.level=0.95)
-# Rexp.posthoc
+#PostHoc
+Day145 <- subset(ReExp.Shell.size, Day=="Day145", select = Treatment:se.Arel)
+Day158 <- subset(ReExp.Shell.size, Day=="Day158", select = Treatment:se.Arel)
 
-Day145 <- subset(ReExp.Shell.size, Day==145, select = Day:se.Arel)
-Day158 <- subset(ReExp.Shell.size, Day==158, select = Day:se.Arel)
+E2.lsm <- lsmeans(Rexps, ~ Treatment*Secondary*Day, adjust="tukey") #compute least-squares means for Treatment*Day from ANOVA model
+E2.pairs <- cld(E2.lsm, alpha=.05, Letters=letters) #list pairwise tests and letter display
+E2.pairs #view results
 
+#Exposure2 Plotting
 Fig.Exp2.D10.size <- ggplot(Day145, aes(x=Secondary, y=avg.Arel, group=Treatment)) + 
   geom_errorbar(aes(ymin=Day145$avg.Arel-Day145$se.Arel, ymax=Day145$avg.Arel+Day145$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.05)) +
   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
   geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.05)) +
+  annotate("text", x=0.85, y=1.3, label = "b", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=c(0.85,0.85,2.2,2.2,2.25), y=c(0.9,0.95,0.88, 0.92,0.97), label = "ab", size = 3) + #add text to the graphic for posthoc letters
   xlab("Secondary Treatment") +
   ylab("Relative Size") +
   ylim(0.5,1.5) +
@@ -598,6 +562,8 @@ Fig.Exp2.D23.size <- ggplot(Day158, aes(x=Secondary, y=avg.Arel, group=Treatment
   geom_errorbar(aes(ymin=Day158$avg.Arel-Day158$se.Arel, ymax=Day158$avg.Arel+Day158$se.Arel), colour="black", width=.1, position = position_dodge(width = 0.05)) +
   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.05)) +   
   geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.05)) +
+  annotate("text", x=c(2.2,2.2), y=c(0.81, 0.85), label = "a", size = 3) + #add text to the graphic for posthoc letters
+  annotate("text", x=c(0.85,0.85,0.85,2.25), y=c(0.96,1.04,1.2,0.95), label = "ab", size = 3) + #add text to the graphic for posthoc letters
   xlab("Secondary Treatment") +
   ylab("Relative Size") +
   ylim(0.5,1.5) +
@@ -616,39 +582,10 @@ Fig.Exp2.D23.size <- ggplot(Day158, aes(x=Secondary, y=avg.Arel, group=Treatment
 
 Fig.Exp2.D23.size
 
-
 #all size over time
-All.avg.area <- aggregate(Area ~ Day*Treatment*Secondary, data=seed.size, mean)
-All.se.area <- aggregate(Area ~ Day*Treatment*Secondary, data=seed.size, std.error)
-
-All <- cbind(All.avg.area, All.se.area$Area)
-colnames(All) <- c("Day",  "Treatment",	"Secondary",	"mean", "se")
-#All$grps <- c("pH8.0", "pH8.0","pH8.0","pH8.0","pH8.0","pH8.0","pH7.4", "pH7.4", "pH7.4", "pH7.4", "pH7.4", "pH7.4", "None", "None", "None", "None", "None","None","None", "None","None", "None", "None","None","None","None","None")
-
-# #grouped plotting over time
-# Fig.Time <- ggplot(All, aes(x=Day, y=mean, group=Treatment)) + 
-#   geom_errorbar(aes(ymin=All$mean-All$se, ymax=All$mean+All$se), colour="black", width=.1, position = position_dodge(width = 0.6)) +
-#   geom_line(aes(linetype=Treatment), size = 0.5, position = position_dodge(width = 0.6)) +   
-#   geom_point(aes(shape=Treatment), size = 3, position = position_dodge(width = 0.6)) +
-#   #scale_shape_manual(values = c(16, 21, 15, 22, 17,24)) +
-#   scale_x_continuous(breaks=seq(0,160,10)) +
-#   xlab("Days") +
-#   ylab(expression(paste("Relative Size"))) +
-#   #ylim(0.5,3.5) +
-#   theme_bw() + #Set the background color
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #Set the text angle
-#         axis.line = element_line(color = 'black'), #Set the axes color
-#         panel.border = element_blank(), #Set the border
-#         panel.grid.major = element_blank(), #Set the major gridlines
-#         panel.grid.minor = element_blank(), #Set the minor gridlines
-#         plot.background=element_blank(),  #Set the plot background
-#         legend.key = element_blank(),  #remove legend background
-#         legend.position=c(.2, .6)) + #set legend location
-#   ggtitle("E) Exposure 2 over time") +
-#   theme(plot.title = element_text(face = 'bold', 
-#                                   size = 12, 
-#                                   hjust = 0))
-# Fig.Time
+All.Area <- do.call(data.frame,aggregate(Area ~ Day*Treatment*Secondary, data = seed.size, function(x) c(mean = mean(x), se = std.error(x)))) #calculate mean and sem
+All.Area <- All.Area[with(All.Area, order(Day, Treatment)), ] #order by day and then treatment
+write.table (All.Area, file="/Users/hputnam/MyProjects/Geoduck_Epi/project_juvenile_geoduck_oa/RAnalysis/Output/All.Shell.Area.csv", sep=",", row.names = FALSE) #save data to output file
 
 ##### CAPTURE STATISTICAL OUTPUT AND FIGURES TO FILE #####
 setwd(file.path(mainDir, 'Output'))
@@ -658,7 +595,8 @@ capture.output(Flow1.Rate, FL1.res, Flow2.Rate, FL2.res, temp1.tank.res, temp1.t
                TA2.tank.res, TA2.trt.res, cells1.tank.res, cells1.trt.res,
                cells2.tank.res, cells2.trt.res,
                file="Geoduck_Juvenile_Descriptive_Statistics.txt")
-capture.output(Init.res, CG.res, Rexp.res, file="Geoduck_Juvenile_Statistical_Results.txt")
+
+capture.output(Init.res,E1.pairs, CG.res, CG.pairs, Rexp.res, E2.pairs, file="Geoduck_Juvenile_Statistical_Results.txt")
 
 #Capture Figures to File
 Figure1.Size <- arrangeGrob(Fig.Exp1.size,Fig.CG.size, Fig.Exp2.D10.size, Fig.Exp2.D23.size, ncol=2)
