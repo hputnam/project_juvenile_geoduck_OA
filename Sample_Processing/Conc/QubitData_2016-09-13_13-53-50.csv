@@ -1,0 +1,8 @@
+"Run ID","Assay Name","Test Name","Test Date","Qubit® tube conc.","Units","Original sample conc.","Units","Sample Volume (µL)","Dilution Factor","Std 1 RFU","Std 2 RFU","Std 3 RFU","Excitation","Emission","Green RFU","Far Red RFU"
+"2016-09-13_134453","RNA High sensitivity","Sample_#160913-135337","2016/09/13 13:53:37","139","ng/mL","2.78","ng/µL","10","20.0","86.92","1857.17",,"Red","Far Red",,"637.67"
+"2016-09-13_134453","RNA High sensitivity","Sample_#160913-135320","2016/09/13 13:53:20","129","ng/mL","2.58","ng/µL","10","20.0","86.92","1857.17",,"Red","Far Red",,"598.15"
+"2016-09-13_134453","RNA High sensitivity","Sample_#160913-135300","2016/09/13 13:53:00","Out of range","ng/mL","Out of range","ng/µL","10","20.0","86.92","1857.17",,"Red","Far Red",,"89.22"
+"2016-09-13_134453","RNA High sensitivity","Sample_#160913-135247","2016/09/13 13:52:47","99.8","ng/mL","2.00","ng/µL","10","20.0","86.92","1857.17",,"Red","Far Red",,"480.22"
+"2016-09-13_134453","RNA High sensitivity","Sample_#160913-135234","2016/09/13 13:52:34","307","ng/mL","6.14","ng/µL","10","20.0","86.92","1857.17",,"Red","Far Red",,"1261.03"
+"2016-09-13_134453","RNA High sensitivity","Sample_#160913-134547","2016/09/13 13:45:47","205","ng/mL","4.10","ng/µL","10","20.0","86.92","1857.17",,"Red","Far Red",,"895.24"
+"2016-09-13_134453","RNA High sensitivity","Sample_#160913-134534","2016/09/13 13:45:34","510","ng/mL","10.2","ng/µL","10","20.0","86.92","1857.17",,"Red","Far Red",,"1880.24"
