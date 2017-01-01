@@ -1,1 +1,0 @@
-{"columns":[{"type":"key","name":"chr"},{"type":"unsigned long","name":"start"},{"name":"stop","type":"unsigned long"},{"name":"strand","type":"byte"},{"name":"value1","type":"double"},{"type":"double","name":"value2"}]}
