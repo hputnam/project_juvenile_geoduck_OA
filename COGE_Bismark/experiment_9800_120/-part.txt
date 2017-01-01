@@ -1,0 +1,55 @@
+# metadata file written by ibis::part::writeMetaData
+# on Sat Dec 31 09:05:31 2016
+
+BEGIN HEADER
+Name = "load_experiment_CpG"
+Description = "ardea -d load_experiment_CpG -m chr:key,start:unsigned long,stop:unsigned long,strand:byte,value1:double,value2:double -t load_experiment_CpG/CpG.filtered.coge.csv.processed"
+Number_of_columns = 6
+Number_of_rows = 384430
+Timestamp = 1483200331
+State = 1
+index = <binning precision=2/><encoding equality/>
+END HEADER
+
+Begin Column
+name = "chr"
+description = chr = scaffold160770, scaffold91983, scaffold51413, scaffold29033, scaffold24464, scaffold74654, scaffold191342, ..., scaffold156543
+data_type = "CATEGORY"
+minimum = 1
+maximum = 18273
+End Column
+
+Begin Column
+name = "start"
+data_type = "ULONG"
+minimum = 2
+maximum = 154100
+End Column
+
+Begin Column
+name = "stop"
+data_type = "ULONG"
+minimum = 2
+maximum = 154100
+End Column
+
+Begin Column
+name = "strand"
+data_type = "BYTE"
+minimum = -1
+maximum = 1
+End Column
+
+Begin Column
+name = "value1"
+data_type = "DOUBLE"
+minimum = 0
+maximum = 1
+End Column
+
+Begin Column
+name = "value2"
+data_type = "DOUBLE"
+minimum = 5
+maximum = 1511
+End Column
