@@ -1,0 +1,2 @@
+Date,ZeroPoint,Slope,pH4,pH7,pH10,temp,Calib.status,notes,Initial,,,,
+20180710, 6.928, -57.12, 167.2, -5.2, -180.7, 20.3, pass, LabX gave 2 zero point and slope values, ES
