@@ -1,4 +1,1 @@
-Date,ZeroPoint,Slope,pH4,pH7,pH10,temp,Calib.status,notes,Initials
-20180710,6.928,-57.12,167.2,-5.2,-180.7,20.3,pass,LabX gave 2 zero point and slope values; took 1st,ES
-20180711,6.796,-56.55,168.3,-2.4,-179.7,20.5,pass,LabX gave 2 zero point and slope values; took 1st,ES
-20180712,7.017,-55.83,168.4,0.0,-178.4,20.9,pass,LabX gave 2 zero point and slope values; took 1st,ES
+Date,ZeroPoint,Slope,pH4,pH7,pH10,temp,Calib.status,notes,Initials20180710,6.928,-57.12,167.2,-5.2,-180.7,20.3,pass,LabX gave 2 zero point and slope values; took 1st,ES20180711,6.796,-56.55,168.3,-2.4,-179.7,20.5,pass,LabX gave 2 zero point and slope values; took 1st,ES20180712,7.017,-55.83,168.4,0,-178.4,20.9,pass,LabX gave 2 zero point and slope values; took 1st,ES
